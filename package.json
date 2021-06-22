@@ -1,0 +1,30 @@
+{
+  "name": "i-level-print-service",
+  "version": "1.0.0",
+  "description": "Print service application for i Level",
+  "main": "./build/server.js",
+  "bin": "./build/server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon ./build/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SamGuard/I-Level-Print-Service.git"
+  },
+  "author": "Samuel Guard, Joseph Cryer",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/SamGuard/I-Level-Print-Service/issues"
+  },
+  "homepage": "https://github.com/SamGuard/I-Level-Print-Service#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "nodemon": "^2.0.7",
+    "pkg": "^5.2.1"
+  },
+  "pkg": {
+    "assets": "assets/*",
+    "targets": [ "win32", "mac" ]
+  }
+}
