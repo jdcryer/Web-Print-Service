@@ -22,7 +22,7 @@
     "express": "^4.17.1",
     "nodemon": "^2.0.7",
     "pkg": "^5.2.1",
-    "printer": "git+https://github.com/tojocky/node-printer.git"
+    "printer": "^0.4.0"
   },
   "pkg": {
     "assets": "assets/*",

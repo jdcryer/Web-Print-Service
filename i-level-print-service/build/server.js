@@ -1,6 +1,7 @@
-const { exec } = require("child_process");
+console.log(process.cwd());
 const http = require("http")
 const app = require("./app")
+
 
 let server = http.createServer(app);
 

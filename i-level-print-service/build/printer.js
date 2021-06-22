@@ -1,6 +1,7 @@
 const printer = require("printer")
 const fs = require("fs");
-let config = JSON.parse(fs.readFileSync(process.cwd + "/../printer-config.json", "utf-8"));
+console.log(process.cwd() + "/printer-config.json", "utf-8");
+let config = JSON.parse(fs.readFileSync(process.cwd() + "/printer-config.json", "utf-8"));
 console.log(config)
 
 function getPrinterConfig(name){
@@ -8,7 +9,7 @@ function getPrinterConfig(name){
 }
 
 function saveConfig(){
-    fs.writeFileSync(process.cwd + "/../printer-config.json", JSON.stringify(config));
+    fs.writeFileSync(process.cwd() + "/printer-config.json", JSON.stringify(config));
 }
 
 function getPrinters(){
