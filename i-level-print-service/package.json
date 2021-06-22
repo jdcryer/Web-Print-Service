@@ -21,10 +21,14 @@
   "dependencies": {
     "express": "^4.17.1",
     "nodemon": "^2.0.7",
-    "pkg": "^5.2.1"
+    "pkg": "^5.2.1",
+    "printer": "git+https://github.com/tojocky/node-printer.git"
   },
   "pkg": {
     "assets": "assets/*",
-    "targets": [ "win", "mac" ]
+    "targets": [
+      "win",
+      "mac"
+    ]
   }
 }

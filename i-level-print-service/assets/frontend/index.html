@@ -8,20 +8,20 @@
     <title>Document</title>
 </head>
 <body>
-    <div style="border: 5px solid black; width: 100px;" id="stop">
-        Stop
-    </div>
-    <div id="main">
+    <div id="printers">
 
     </div>
+
     <script>
-        let chesTimer = setInterval(() => {
-            $('#main').append(`<p> CHEEEEEEEEEEEEEEEEEEEEEEESEEEEEEE </p>`);
-        }, 100);
-
-        
-        $("#stop").click(() => {
-            clearInterval(chesTimer);
+        $.get("/printers", (data) => {
+            
+            JSON.parse(data).forEach(el => {
+                $("#printers").append(`
+                    <p style="font-weight: ${ (el.config.enabled) ? "900" : "100" };">
+                        Display Name: ${el.config.displayName}, ID: ${el.name}
+                    </p><br>
+                `)
+            });
         });
     </script>
 </body>

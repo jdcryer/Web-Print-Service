@@ -1,0 +1,28 @@
+[
+  {
+    "name": "ZDesigner ZD500-203dpi ZPL",
+    "enabled": true,
+    "displayName": "Zebra-Printer-1"
+  },
+  {
+    "name": "OneNote for Windows 10",
+    "enabled": false,
+    "displayName": "OneNote for Windows 10"
+  },
+  {
+    "name": "OneNote (Desktop)",
+    "enabled": false,
+    "displayName": "OneNote (Desktop)"
+  },
+  {
+    "name": "Microsoft XPS Document Writer",
+    "enabled": false,
+    "displayName": "Microsoft XPS Document Writer"
+  },
+  {
+    "name": "Microsoft Print to PDF",
+    "enabled": false,
+    "displayName": "Microsoft Print to PDF"
+  },
+  { "name": "Fax", "enabled": false, "displayName": "Fax" }
+]
