@@ -25,6 +25,6 @@
   },
   "pkg": {
     "assets": "assets/*",
-    "targets": [ "win32", "mac" ]
+    "targets": [ "win", "mac" ]
   }
 }
