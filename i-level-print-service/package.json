@@ -4,6 +4,7 @@
   "description": "Print service application for i Level",
   "main": "./build/server.js",
   "bin": "./build/server.js",
+  "private": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon ./build/server.js"
@@ -19,16 +20,17 @@
   },
   "homepage": "https://github.com/SamGuard/I-Level-Print-Service#readme",
   "dependencies": {
+    "@thiagoelg/node-printer": "^0.5.5",
     "express": "^4.17.1",
     "nodemon": "^2.0.7",
-    "pkg": "^5.2.1",
-    "printer": "^0.4.0"
+    "pkg": "^5.2.1"
   },
   "pkg": {
     "assets": "assets/*",
-    "targets": [
-      "win",
-      "mac"
-    ]
+    "scripts": [
+      "build/**/*.js",
+      "node_modules/@thiagoelg/node-printer/lib/node_printer.node"
+    ],
+    "targets": []
   }
 }

@@ -1,3 +1,8 @@
+
+
+
+
+# ----------------Template-------------
 # Logs
 logs
 *.log
@@ -106,3 +111,5 @@ dist
 *.exe
 
 i-level-print-service-macos
+
+i-level-print-service/i-level-print-service-linux

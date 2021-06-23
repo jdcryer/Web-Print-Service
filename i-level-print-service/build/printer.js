@@ -1,8 +1,8 @@
-const printer = require("printer")
+const printer = require("@thiagoelg/node-printer");
 const fs = require("fs");
 console.log(process.cwd() + "/printer-config.json", "utf-8");
 let config = JSON.parse(fs.readFileSync(process.cwd() + "/printer-config.json", "utf-8"));
-console.log(config)
+//console.log(config)
 
 function getPrinterConfig(name){
     return config.find(x => x.name == name);
