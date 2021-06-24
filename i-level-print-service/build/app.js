@@ -12,7 +12,31 @@ app.get("/printers", (req, res, next) => {
     res.send(JSON.stringify(printer.getPrinters()));
 });
 
+app.post("/testPrint", (req, res, next) => {
+    const printerName = req.body.name;
+    const data = req.body.data;
+
+    /* test data
+    printer.sendPrint("ZDesigner ZD500-203dpi ZPL", `
+    ^XA
+    ^FO200,50^A0R,200,150^FDDUMPTRUCK
+    ^FS
+    ^XZ`, null);
+    */
+
+    printer.sendPrint(printerName, data)
+        .then(
+            (data) => {
+                res.send(data);
+            },
+            (err) => {
+                res.send(err);
+            }
+        );
+});
+
 app.use("/", (req, res, next) => {
+
     fs.readFile(process.cwd() + "/assets/frontend/index.html", "utf8", function (err, data) {
         if (err) {
             res.send("<!DOCTYPE html><html>Error 500: File not found!</html>");
