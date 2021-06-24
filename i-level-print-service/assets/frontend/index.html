@@ -17,8 +17,9 @@
             
             JSON.parse(data).forEach(el => {
                 $("#printers").append(`
-                    <p style="font-weight: ${ (el.config.enabled) ? "900" : "100" };">
-                        Display Name: ${el.config.displayName}, ID: ${el.name}
+                    <p style="font-weight: ${ (el.enabled) ? "900" : "100" };">
+                        Display Name: ${el.displayName}, ID: ${el.name} ${ (el.online) ? "(online)" : "(offline)" }
+                        <p>     Accpeted formats: ${el.acceptedTypes}
                     </p><br>
                 `)
             });

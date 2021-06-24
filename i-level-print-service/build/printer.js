@@ -12,21 +12,32 @@ function saveConfig() {
     fs.writeFileSync(process.cwd() + "/printer-config.json", JSON.stringify(config));
 }
 
+//Gets all the printers and matches them to their config in printe-config.json
+//If a printer has no config it will be assigned a defualt one and saved to file
 function updateConfig() {
     let printerData = []
     changedConfig = false;
     printer.getPrinters().forEach(el => {
-        const con = getPrinterConfig(el.name);
-        if (con != undefined) {
-            el.config = con;
-            printerData.push(el);
-        } else {
-            const newCon = { name: el.name, enabled: true, displayName: el.name }
-            config.push(newCon)
-            el.config = newCon;
-            printerData.push(el);
+        let p = {}
+        p.name = el.name;
+        p.shareName = el.shareName;
+        p.statusNumber = el.statusNumber;
+        p.online = (el.attributes.find(x => x == "OFFLINE") != undefined) ? false : true;
+
+        let con = getPrinterConfig(el.name);
+        if (con == undefined) {
+            con = { 
+                name: el.name,
+                enabled: true, 
+                displayName: el.name,
+                acceptedTypes: []
+            }
+            config.push(con);
             changedConfig = true;
         }
+
+        Object.assign(p, con);
+        printerData.push(p);
     });
 
     if (changedConfig) {
@@ -43,16 +54,28 @@ function getPrinters() {
 
 function sendPrint(printerName, data, printType) {
     updateConfig();
+
+
     return new Promise((resolve, reject) => {
+        let p = getPrinters().find(x => x.name == printerName);
+        if(p == undefined){
+            reject("printer does not exists");
+            return;
+        }
+
+        if(p.enabled == false){
+            reject("printer disabled");
+            return;
+        }
         printer.printDirect(
             {
                 data: data,
-                printer: printerName, // printer name, if missing then will print to default printer
+                printer: printerName,
                 success: function (jobID) {
                     resolve("success")
                 },
                 error: function (err) {
-                    reject(err);
+                    reject(err.message);
                 }
             });
     });
