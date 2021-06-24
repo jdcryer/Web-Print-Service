@@ -1,2 +1,2 @@
-i-level-print-service-wrapper.exe install
-ILPS.bat
+start /WAIT ./data/i-level-print-service.exe install
+start ./"Start Service.bat"

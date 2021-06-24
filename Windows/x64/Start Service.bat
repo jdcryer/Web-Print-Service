@@ -30,4 +30,4 @@ if '%errorlevel%' NEQ '0' (
 :-------------------------------------- 
 
 net start "iLevelPrintService"
-start "http://localhost:3000"
+explorer "http://127.0.0.1:3000"
