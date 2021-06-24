@@ -7,4 +7,5 @@
     <!-- CAUTION: Don't put arguments here. Use <arguments> instead. -->
     <executable>%BASE%\..\..\i-level-print-service\i-level-print-service-win.exe</executable>
     <description>This the service for the print server connected to i Level</description>
+    <workingdirectory>%BASE%\..\..\i-level-print-service\</workingdirectory>
 </service>
