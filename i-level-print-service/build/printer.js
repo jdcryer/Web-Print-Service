@@ -1,7 +1,6 @@
 const printer = require("@thiagoelg/node-printer");
 const fs = require("fs");
 const { send } = require("process");
-console.log(process.cwd() + "/printer-config.json", "utf-8");
 let config = JSON.parse(fs.readFileSync(process.cwd() + "/printer-config.json", "utf-8"));
 //console.log(config)
 

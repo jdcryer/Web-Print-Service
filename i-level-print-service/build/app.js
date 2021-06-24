@@ -30,7 +30,7 @@ app.post("/testPrint", (req, res, next) => {
                 res.send(data);
             },
             (err) => {
-                res.send(err);
+                res.send(err.message);
             }
         );
 });
