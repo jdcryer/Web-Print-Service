@@ -1,0 +1,80 @@
+{
+    "page": 1,
+    "pageCount": 1,
+    "recordsSent": 6,
+    "recordsFound": 6,
+    "printItem": [
+        {
+            "id": "DA171CBB7911D948BDD60D77CBD7E907",
+            "fk_printJob": "0485082A22DB564CB00B2D05D89F2601",
+            "detail": {
+                "qty": 1,
+                "Size": "M",
+                "Colour": "Navy + White Stripe",
+                "Price": 36,
+                "Alt Price": 36,
+                "Barcode": "5051829215408"
+            }
+        },
+        {
+            "id": "6A193DBD7BAB3C4CA7925A2A43A4005C",
+            "fk_printJob": "0485082A22DB564CB00B2D05D89F2601",
+            "detail": {
+                "qty": 2,
+                "Size": "S",
+                "Colour": "Navy + White Stripe",
+                "Price": 36,
+                "Alt Price": 36,
+                "Barcode": "5051829215392"
+            }
+        },
+        {
+            "id": "7D338027C308AF4EAFFA7BB2269D039E",
+            "fk_printJob": "0485082A22DB564CB00B2D05D89F2601",
+            "detail": {
+                "qty": 2,
+                "Size": "L",
+                "Colour": "Cream/Navy Broken Stripe",
+                "Price": 0,
+                "Alt Price": 0,
+                "Barcode": "5051829215330"
+            }
+        },
+        {
+            "id": "C692E0ABC39F124A819AFAEA19291FA5",
+            "fk_printJob": "0485082A22DB564CB00B2D05D89F2601",
+            "detail": {
+                "qty": 2,
+                "Size": "M",
+                "Colour": "Cream/Navy Broken Stripe",
+                "Price": 0,
+                "Alt Price": 0,
+                "Barcode": "5051829215323"
+            }
+        },
+        {
+            "id": "0B8B3E87C0A5024099989035B87D07D8",
+            "fk_printJob": "0485082A22DB564CB00B2D05D89F2601",
+            "detail": {
+                "qty": 4,
+                "Size": "S",
+                "Colour": "Cream/Navy Broken Stripe",
+                "Price": 0,
+                "Alt Price": 0,
+                "Barcode": "5051829215316"
+            }
+        },
+        {
+            "id": "6DB6DC4CA44BBF439310C9586D80496E",
+            "fk_printJob": "0485082A22DB564CB00B2D05D89F2601",
+            "detail": {
+                "qty": 2,
+                "Size": "XS",
+                "Colour": "Cream/Navy Broken Stripe",
+                "Price": 0,
+                "Alt Price": 0,
+                "Barcode": "5051829215309"
+            }
+        }
+    ]
+}

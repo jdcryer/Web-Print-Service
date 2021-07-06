@@ -66,7 +66,7 @@ function buildStyle(input, prop) {
     const fontSX = prop.fontSize;
     const fontSY = prop.fontSize;
     return `
-        ^FO${top},${left}^CF${font},${fontSX},${fontSY}^FD${input}^FS\n`;
+        ^FO${left},${top}^CF${font},${fontSX},${fontSY}^FD${input}^FS\n`;
 }
 
 function buidlBarcode(input, prop) {
@@ -76,20 +76,18 @@ function buidlBarcode(input, prop) {
     const height = prop.height
     
     return `
-        ^FO${top},${left}^BY${2},,^BC,${height},Y,N,N,N^FD${input}^FS\n`;
+        ^FO${left},${top}^BY${1},,^BE,${height},Y,N^FD${input}^FS\n`;
 }
 
 function buildProp(name, input, prop) {
     var output = null;
     switch (name) {
-        case "style":
-            output = buildStyle(input, prop);
-            break;
-        case "barcode":
+        case "Barcode":
             output = buidlBarcode(input, prop);
             break;
         default:
-            throw "Property not recongnised";
+            output = buildStyle(input, prop);
+            break;
     }
     return output
 }
@@ -118,25 +116,23 @@ function buildJob(data, page, props) {
 }
 
 //Takes json build data
-function build(data) {
+function build(jobData, itemData) {
     let output = "";
-    const dFont = data.format.defaultFont;
-    const page = data.format.page;
-    const prop = data.format.properties;
+    const dFont = jobData.format.defaultFont;
+    const page = jobData.page;
+    const prop = jobData.properties;
 
-    output = "";
-
-    data.data.forEach(job => {
-        output += buildJob(job, page, prop) + "\n\n";
-    });
+    output = buildJob(itemData.detail, page, prop);
+    
 
     console.log(output);
     return output
 
 }
 
-testData = fs.readFileSync(__dirname + "./../assets/ZPL_test.json", "utf-8");
+testDataJob = fs.readFileSync(__dirname + "/../assets/ZPL_tests/test_job.json", "utf-8");
+testDataItem = fs.readFileSync(__dirname + "/../assets/ZPL_tests/test_items.json", "utf-8");
 
-build(JSON.parse(testData));
+build(JSON.parse(testDataJob), JSON.parse(testDataItem).printItem[2]);
 
 module.exports.build = build
