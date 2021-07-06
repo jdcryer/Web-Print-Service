@@ -26,7 +26,7 @@
     "pkg": "^5.2.1"
   },
   "pkg": {
-    "assets": "assets/*",
+    "assets": "assets/**/*",
     "scripts": [
       "build/**/*.js",
       "node_modules/@thiagoelg/node-printer/lib/node_printer.node"
