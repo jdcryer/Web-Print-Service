@@ -1,4 +1,3 @@
-const { Cipher } = require("crypto");
 const fs = require("fs");
 const request = require("request");
 
