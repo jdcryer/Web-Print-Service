@@ -126,8 +126,6 @@ function build(jobData, itemData) {
 
     output = buildJob(itemData.detail, page, prop);
     
-
-    console.log(output);
     return output
 
 }
