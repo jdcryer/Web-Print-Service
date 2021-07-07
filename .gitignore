@@ -113,3 +113,5 @@ dist
 i-level-print-service-macos
 
 i-level-print-service/i-level-print-service-linux
+
+i-level-print-service/assets/ZPL_tests/output.png

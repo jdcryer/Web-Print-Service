@@ -1,7 +1,7 @@
 const express = require('express');//Used for routing http requests
 const fs = require("fs")
-const printer = require("./printer")
-const labelConstructor = require("./label_constructor");
+const printer = require("./modules/printer")
+const labelConstructor = require("./modules/label_constructor");
 
 const app = express();
 const bodyparse = require("body-parser");
@@ -14,9 +14,12 @@ app.get("/printers", (req, res, next) => {
 });
 
 app.post("/buildZPL", (req, res, next) => {
+    const data = JSON.parse(req.body.data);
+    const jobData = data.jobData;
+    const itemData = data.itemData;
     res.send(
         JSON.stringify(
-            labelConstructor.build(JSON.parse(req.body.data))
+            labelConstructor.build(jobData, itemData) 
         )
     );
 });

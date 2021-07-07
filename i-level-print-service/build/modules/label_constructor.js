@@ -1,4 +1,6 @@
+const { Cipher } = require("crypto");
 const fs = require("fs");
+const request = require("request");
 
 /*Data format
 
@@ -130,9 +132,34 @@ function build(jobData, itemData) {
 
 }
 
-testDataJob = fs.readFileSync(__dirname + "/../assets/ZPL_tests/test_job.json", "utf-8");
-testDataItem = fs.readFileSync(__dirname + "/../assets/ZPL_tests/test_items.json", "utf-8");
+function getImage(data){
+    var options = {
+        encoding: null,
+        formData: { file: data },
+        // omit this line to get PNG images back
+        headers: { 'Accept': 'image/png' },
+        // adjust print density (8dpmm), label width (4 inches), label height (6 inches), and label index (0) as necessary
+        url: 'http://api.labelary.com/v1/printers/8dpmm/labels/1x1/0/'
+    };
+    
+    request.post(options, function(err, resp, body) {
+        if (err) {
+            return console.log(err);
+        }
+        var filename = __dirname + '/../../assets/ZPL_tests/output.png'; // change file name for PNG images
+        fs.writeFile(filename, body, function(err) {
+            if (err) {
+                console.log(err);
+            }
+        });
+    });
+}
 
-build(JSON.parse(testDataJob), JSON.parse(testDataItem).printItem[2]);
+testDataJob = fs.readFileSync(__dirname + "/../../assets/ZPL_tests/test_job.json", "utf-8");
+testDataItem = fs.readFileSync(__dirname + "/../../assets/ZPL_tests/test_items.json", "utf-8");
+
+const res = build(JSON.parse(testDataJob), JSON.parse(testDataItem).printItem[2]);
+getImage(res);
+
 
 module.exports.build = build
