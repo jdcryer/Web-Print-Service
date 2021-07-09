@@ -9,11 +9,14 @@
             "fk_printJob": "0485082A22DB564CB00B2D05D89F2601",
             "detail": {
                 "qty": 1,
+                "Style": "ACC001",
                 "Size": "M",
-                "Colour": "Navy + White Stripe",
-                "Price": 36,
-                "Alt Price": 36,
-                "Barcode": "5051829215408"
+                "Colour": "Black",
+                "Price": "£0.00",
+                "Alt Price": "£0.00",
+                "Barcode": "5051829215408",
+                "Article": "MINI SHOULDER BAG",
+                "Image": "./assets/ZPL_tests/output.bmp"
             }
         },
         {

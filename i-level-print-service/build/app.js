@@ -9,6 +9,10 @@ const bodyparse = require("body-parser");
 app.use(express.json());
 //app.use(express.static("public"));
 
+app.post("/img", (req, res, next) => {
+    res.send(fs.readFileSync(__dirname + "/../assets/ZPL_tests/output.bmp"));
+})
+
 app.get("/printers", (req, res, next) => {
     res.send(JSON.stringify(printer.getPrinters()));
 });

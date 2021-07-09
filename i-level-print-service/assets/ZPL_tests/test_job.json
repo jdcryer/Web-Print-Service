@@ -1,5 +1,5 @@
 {
-	"id": "0485082A22DB564CB00B2D05D89F2601",
+	"id": "E9C8C07271193145B9534A333E6DADBF",
 	"fk_printFormat": "16BD85B70DC93B4C801DCD38E884DCE3",
 	"fk_printer": "8E4D1AF27B204347876720FF42943112",
 	"printType": "json",
@@ -7,69 +7,83 @@
 		"format": "dynamic",
 		"width": 140,
 		"height": 70,
-		"leftMargin": 5,
-		"rightMargin": 5,
-		"topMargin": 5,
-		"bottomMargin": 5
+		"leftMargin": 0,
+		"rightMargin": 0,
+		"topMargin": 0,
+		"bottomMargin": 0
 	},
 	"properties": {
 		"Style": {
+			"type": "field",
 			"rotation": 0,
-			"left": 10,
-			"top": 5,
+			"left": 5,
+			"top": 0,
 			"font": "Arial",
 			"fontStyle": 0,
 			"fontSize": 10
 		},
 		"Article": {
+			"type": "field",
 			"rotation": 0,
-			"left": 10,
-			"top": 60,
+			"left": 5,
+			"top": 52,
 			"font": "Arial",
 			"fontStyle": 0,
 			"fontSize": 10
 		},
 		"Size": {
+			"type": "field",
 			"rotation": 0,
 			"height": 20,
 			"left": 50,
-			"top": 5,
+			"top": 0,
 			"font": "Arial",
 			"fontStyle": 0,
 			"fontSize": 10
 		},
 		"Colour": {
+			"type": "field",
 			"rotation": 0,
 			"left": 100,
-			"top": 5,
+			"top": 0,
 			"font": "Arial",
 			"fontStyle": 0,
 			"fontSize": 10
 		},
 		"Price": {
+			"type": "field",
+			"label": "GBP",
 			"rotation": 0,
-			"left": 10,
-			"top": 13,
+			"left": 5,
+			"top": 10,
 			"font": "Arial",
 			"fontStyle": 0,
 			"fontSize": 10
 		},
 		"Alt Price": {
+			"type": "field",
 			"rotation": 0,
 			"left": 75,
-			"top": 13,
+			"top": 10,
 			"font": "Arial",
 			"fontStyle": 0,
 			"fontSize": 10
 		},
 		"Barcode": {
+			"type": "barcode",
 			"rotation": 0,
+			"width": 100,
 			"height": 20,
-			"left": 10,
-			"top": 27,
+			"left": 5,
+			"top": 22,
 			"font": "Arial",
 			"fontStyle": 0,
 			"fontSize": 10
+		},
+		"Image": {
+			"type": "image",
+			"left": 5,
+			"top": 120
 		}
 	},
 	"fk_user": "C2355B803935B746B34AA48CB91E327D",
@@ -82,7 +96,7 @@
 			"size": 10
 		}
 	},
-	"createdDate": "2021-06-23T14:10:11",
+	"createdDate": "2021-07-08T18:22:53",
 	"printJob_printFormat": {
 		"id": "16BD85B70DC93B4C801DCD38E884DCE3",
 		"fk_user": "C2355B803935B746B34AA48CB91E327D",
