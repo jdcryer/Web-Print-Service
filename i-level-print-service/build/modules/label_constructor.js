@@ -61,185 +61,197 @@ Z - Only one command, ZZ puts the printer to sleep:)
 
 */
 
-//Getting all special characters and converting them to hex UTF8 
+//Getting all special characters and converting them to hex UTF8
 //(not as simple as just escaping the chars)
 //Why is converting UTF8 to hex so dam confusing
 
 //Taken from: https://github.com/mathiasbynens/mothereff.in
 function filterInput(s) {
-    return encodeURIComponent(s).replace(/['()_*]/g, function (character) {
-        return '%' + character.charCodeAt().toString(16);
-    });
+  return encodeURIComponent(s).replace(/['()_*]/g, function (character) {
+    return "%" + character.charCodeAt().toString(16);
+  });
 }
-
 
 //Field Barcode Image is all thats needed
 
 function buildField(input, prop) {
+  const font = "0";
+  const fontSX = prop.fontSize;
+  const fontSY = prop.fontSize;
 
-    const font = "0";
-    const fontSX = prop.fontSize;
-    const fontSY = prop.fontSize;
-
-    const left = prop.left;
-    const top = Math.floor(prop.top + fontSY / 2);
-    return `
-        ^FO${left},${top}^CF${font},${fontSX},${fontSY}^FH%^FD${filterInput(input)}^FS\n`;
+  const left = prop.left;
+  const top = Math.floor(prop.top + fontSY / 2);
+  return `
+        ^FO${left},${top}^CF${font},${fontSX},${fontSY}^FH%^FD${filterInput(
+    input
+  )}^FS\n`;
 }
 
 function buidlBarcode(input, prop) {
-    const top = prop.top;
-    const left = prop.left;
-    const width = prop.width;
-    const height = prop.height
+  const top = prop.top;
+  const left = prop.left;
+  const width = prop.width;
+  const height = prop.height;
 
-    return `
+  return `
         ^FO${left},${top}^BY${1},,^BE,${height},Y,N^FD${input}^FS\n`;
 }
 
 function buildImage(input, prop, images) {
-    let img = images.find(x => x.link == input).data
-    const top = prop.top;
-    const left = prop.left;
-    const width = img.bitmap.width;
-    const height = img.bitmap.height;
-    const rgbaData = img.bitmap.data;
-    let data = "";
+  let img = images.find((x) => x.link == input).data;
+  const top = prop.top;
+  const left = prop.left;
+  const width = img.bitmap.width;
+  const height = img.bitmap.height;
+  const rgbaData = img.bitmap.data;
+  let data = "";
 
-    for (let i = 0; i < rgbaData.length; i += 4) {
-        data += ("0" +
-            (
-                (rgbaData[i] + rgbaData[i + 1] + rgbaData[i + 2]) / 3
-            ).toString(16)
-        ).slice(-2);
-    }
+  for (let i = 0; i < rgbaData.length; i += 4) {
+    data += (
+      "0" + ((rgbaData[i] + rgbaData[i + 1] + rgbaData[i + 2]) / 3).toString(16)
+    ).slice(-2);
+  }
 
-    for(let i = 0; i < 2048; i++){
-        data += "00";
-    }
+  for (let i = 0; i < 2048; i++) {
+    data += "00";
+  }
 
-    return `
-        ^FO${left},${top}^GFA,${width * height},${width * height},${width},${data}`;
-
+  return `
+        ^FO${left},${top}^GFA,${width * height},${
+    width * height
+  },${width},${data}`;
 }
 
 function buildProp(name, input, prop, images) {
-    var output = null;
-    switch (prop.type) {
-        case "barcode":
-            output = buidlBarcode(input, prop);
-            break;
-        case "field":
-            output = buildField(input, prop);
-            break;
-        case "image":
-            output = buildImage(input, prop, images);
-            break;
-        default:
-            break;
-    }
-    return output
+  var output = null;
+  switch (prop.type) {
+    case "barcode":
+      output = buidlBarcode(input, prop);
+      break;
+    case "field":
+      output = buildField(input, prop);
+      break;
+    case "image":
+      output = buildImage(input, prop, images);
+      break;
+    default:
+      break;
+  }
+  return output;
 }
 
 function buildJob(items, page, props, images) {
-    //label setup
-    let output =
-        `^XA
+  //label setup
+  let output = `^XA
         ^PW${page.width}
         ^LH${page.leftMargin},${page.topMargin}
         ^PQ${items.qty}
         ^CI28
         `;
 
-    //----------------
-    Object.keys(items)
-        .filter(x => x != "qty")
-        .forEach(pName => {
-            output += buildProp(
-                pName,
-                items[pName],
-                props[Object.keys(props).find(x => x == pName)],
-                images
-            );
-        });
-    output += "\n^XZ";
-    return output
+  //----------------
+  Object.keys(items)
+    .filter((x) => x != "qty")
+    .forEach((pName) => {
+      output += buildProp(
+        pName,
+        items[pName],
+        props[Object.keys(props).find((x) => x == pName)],
+        images
+      );
+    });
+  output += "\n^XZ";
+  return output;
 }
 
 function cacheImages(items) {
-    let promises = [];
-    Object.keys(items).forEach(x => {
-        if (x == "Image") {
-            promises.push(
-                new Promise((resolve, reject) => {
-                    jimp.read(items[x])
-                        .then((data) => {
-                            resolve({ link: items[x], data: data });
-                        })
-                        .catch(err => {
-                            reject(err);
-                        })
-                })
-            );
-        }
-    });
+  let promises = [];
+  Object.keys(items).forEach((x) => {
+    if (x == "Image") {
+      promises.push(
+        new Promise((resolve, reject) => {
+          jimp
+            .read(items[x])
+            .then((data) => {
+              resolve({ link: items[x], data: data });
+            })
+            .catch((err) => {
+              reject(err);
+            });
+        })
+      );
+    }
+  });
 
-    return promises;
+  return promises;
 }
 
 //Takes json build data
 function build(jobData, itemData) {
-    return new Promise((resolve, reject) => {
-        var output = "";
-        const dFont = jobData.format.defaultFont;
-        const page = jobData.page;
-        const prop = jobData.properties;
+  return new Promise((resolve, reject) => {
+    var output = "";
+    const dFont = jobData.format.defaultFont;
+    const page = jobData.page;
+    const prop = jobData.properties;
 
-        Promise.all(cacheImages(itemData.detail)).then(images => {
-            output = buildJob(itemData.detail, page, prop, images);
-            //for testing:
-            fs.writeFileSync(__dirname + '/../../assets/ZPL_tests/output.txt', output);
-            //--
-            resolve(output);
-        });
+    Promise.all(cacheImages(itemData.detail)).then((images) => {
+      output = buildJob(itemData.detail, page, prop, images);
+      //for testing:
+      fs.writeFileSync(
+        __dirname + "/../../assets/ZPL_tests/output.txt",
+        output
+      );
+      //--
+      resolve(output);
     });
+  });
 }
 
 function getTestImage(url, data = "") {
-    return new Promise((resolve, reject) => {
-        var options = {
-            encoding: null,
-            formData: { file: data },
-            // omit this line to get PNG images back
-            headers: { 'Accept': 'image/png' },
-            // adjust print density (8dpmm), label width (4 inches), label height (6 inches), and label index (0) as necessary
-            url: url
-        };
+  return new Promise((resolve, reject) => {
+    var options = {
+      encoding: null,
+      formData: { file: data },
+      // omit this line to get PNG images back
+      headers: { Accept: "image/png" },
+      // adjust print density (8dpmm), label width (4 inches), label height (6 inches), and label index (0) as necessary
+      url: url,
+    };
 
-        request.post(options, function (err, resp, body) {
-            if (err) {
-                reject(err);
-            }
-            resolve({ link: url, data: body });
-        });
+    request.post(options, function (err, resp, body) {
+      if (err) {
+        reject(err);
+      }
+      resolve({ link: url, data: body });
     });
+  });
 }
 
 //-------testing code-------
 
-testDataJob = fs.readFileSync(__dirname + "/../../assets/ZPL_tests/test_job.json", "utf-8");
-testDataItem = fs.readFileSync(__dirname + "/../../assets/ZPL_tests/test_items.json", "utf-8");
+testDataJob = fs.readFileSync(
+  __dirname + "/../../assets/ZPL_tests/test_job.json",
+  "utf-8"
+);
+testDataItem = fs.readFileSync(
+  __dirname + "/../../assets/ZPL_tests/test_items.json",
+  "utf-8"
+);
 
-build(JSON.parse(testDataJob), JSON.parse(testDataItem).printItem[0]).then((res) => {
-    getTestImage("http://api.labelary.com/v1/printers/8dpmm/labels/1x1/0/", res).then((data) => {
-        var filename = __dirname + '/../../assets/ZPL_tests/output.png';
-        fs.writeFile(filename, data.data, function (err) {
-            if (err) {
-                console.log(err);
-            }
-        });
+build(JSON.parse(testDataJob), JSON.parse(testDataItem).printItem[0]).then(
+  (res) => {
+    getTestImage(
+      "http://api.labelary.com/v1/printers/8dpmm/labels/1x1/0/",
+      res
+    ).then((data) => {
+      var filename = __dirname + "/../../assets/ZPL_tests/output.png";
+      fs.writeFile(filename, data.data, function (err) {
+        if (err) {
+          console.log(err);
+        }
+      });
     });
-});
+  }
+);
 
-
-module.exports.build = build
+module.exports.build = build;
