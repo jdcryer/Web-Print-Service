@@ -20,6 +20,7 @@ class Api {
     this.running = !this.running;
     this.failures = 0;
   }
+
   buildJobCountUrl = () =>
     `https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/print/printjob/count?fk_printer=${this.printerId}`;
 
@@ -100,9 +101,13 @@ class Api {
               jobArray.push({ job: jobs.data[i], items: items.data });
             }
             console.log(jobArray); // DO SOMETHING WITH JOBS HERE
+            // Maybe we should add jobs to a parent array outside of API?
+            // That would mean that a separate listener pulls jobs off of the parent array as they appear, and print them.
+            // Would be a better way to handle multiple printers? So printing from one printer doesn't hold back printing from another.
+            // Probably best to discuss this properly before final build.
           })
           .catch((error) => console.error(error)),
-      10000
+      1000
     );
   }
 

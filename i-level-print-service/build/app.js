@@ -12,7 +12,7 @@ let apiInstance = new api({
   printerId: process.env.PRINTER_ID,
 });
 
-apiInstance.startPrintJobListener();
+apiInstance.startPrintJobListener(); // Currently only handles one printerId at once...
 
 app.use(express.json());
 //app.use(express.static("public"));
