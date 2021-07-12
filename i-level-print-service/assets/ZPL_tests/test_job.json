@@ -14,7 +14,7 @@
 	},
 	"properties": {
 		"Style": {
-			"type": "field",
+			"transformType": "field",
 			"rotation": 0,
 			"left": 5,
 			"top": 0,
@@ -23,7 +23,7 @@
 			"fontSize": 10
 		},
 		"Article": {
-			"type": "field",
+			"transformType": "field",
 			"rotation": 0,
 			"left": 5,
 			"top": 52,
@@ -32,7 +32,7 @@
 			"fontSize": 10
 		},
 		"Size": {
-			"type": "field",
+			"transformType": "field",
 			"rotation": 0,
 			"height": 20,
 			"left": 50,
@@ -42,7 +42,7 @@
 			"fontSize": 10
 		},
 		"Colour": {
-			"type": "field",
+			"transformType": "field",
 			"rotation": 0,
 			"left": 100,
 			"top": 0,
@@ -51,7 +51,7 @@
 			"fontSize": 10
 		},
 		"Price": {
-			"type": "field",
+			"transformType": "field",
 			"label": "GBP",
 			"rotation": 0,
 			"left": 5,
@@ -61,7 +61,7 @@
 			"fontSize": 10
 		},
 		"Alt Price": {
-			"type": "field",
+			"transformType": "field",
 			"rotation": 0,
 			"left": 75,
 			"top": 10,
@@ -70,7 +70,7 @@
 			"fontSize": 10
 		},
 		"Barcode": {
-			"type": "barcode",
+			"transformType": "barcode",
 			"rotation": 0,
 			"width": 100,
 			"height": 20,
@@ -81,7 +81,7 @@
 			"fontSize": 10
 		},
 		"Image": {
-			"type": "image",
+			"transformType": "image",
 			"left": 5,
 			"top": 75,
 			"width": 64,
@@ -120,7 +120,7 @@
 				{
 					"name": "Style",
 					"formula": "variant_product.code",
-					"type": "field",
+					"transformType": "field",
 					"rotation": 0,
 					"top": 0,
 					"left": 5,
@@ -131,7 +131,7 @@
 				{
 					"name": "Article",
 					"formula": "variant_product.title",
-					"type": "field",
+					"transformType": "field",
 					"rotation": 0,
 					"top": 52,
 					"left": 5,
@@ -142,7 +142,7 @@
 				{
 					"name": "Size",
 					"formula": "size",
-					"type": "field",
+					"transformType": "field",
 					"rotation": 0,
 					"top": 0,
 					"left": 50,
@@ -154,7 +154,7 @@
 				{
 					"name": "Colour",
 					"formula": "colour",
-					"type": "field",
+					"transformType": "field",
 					"rotation": 0,
 					"top": 0,
 					"left": 100,
@@ -165,7 +165,7 @@
 				{
 					"name": "Price",
 					"formula": "",
-					"type": "price",
+					"transformType": "price",
 					"rotation": 0,
 					"top": 10,
 					"left": 5,
@@ -179,7 +179,7 @@
 				{
 					"name": "Alt Price",
 					"formula": "",
-					"type": "price",
+					"transformType": "price",
 					"rotation": 0,
 					"top": 10,
 					"left": 75,
@@ -192,7 +192,7 @@
 				{
 					"name": "Barcode",
 					"formula": "barcode",
-					"type": "barcode",
+					"transformType": "barcode",
 					"rotation": 0,
 					"top": 22,
 					"left": 5,
