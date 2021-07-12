@@ -6,7 +6,7 @@ const jimp = require("jimp");
 
 printer
 printType
-defaultFont:
+defaultFont
   font
   style
   size
@@ -99,6 +99,10 @@ function buidlBarcode(input, prop) {
 
 function buildImage(input, prop, images) {
   let img = images.find((x) => x.link == input).data;
+  
+  //Image will be stretched when on the screen resize it to the given size
+  //Then multiply by 4
+  img = img.resize(parseInt(prop.width), parseInt(prop.height) * 4, jimp.RESIZE_NEAREST_NEIGHBOR);
   const top = prop.top;
   const left = prop.left;
   const width = img.bitmap.width;
@@ -106,20 +110,30 @@ function buildImage(input, prop, images) {
   const rgbaData = img.bitmap.data;
   let data = "";
 
-  for (let i = 0; i < rgbaData.length; i += 4) {
-    data += (
-      "0" + ((rgbaData[i] + rgbaData[i + 1] + rgbaData[i + 2]) / 3).toString(16)
-    ).slice(-2);
+  const getBWPixel = (index) => {
+    if(index > rgbaData.length){
+      index = rgbaData.length - 1;
+    }
+    return  (rgbaData[index] + rgbaData[index + 1] + rgbaData[index + 2]) / 3;
   }
 
-  for (let i = 0; i < 2048; i++) {
-    data += "00";
+  for (let i = 0; i < rgbaData.length; i += 4) {
+    if(width % 2 != 0 && ((i/4) + 1) % width == 0){
+      data += Math.floor(
+        15 * getBWPixel(i - 4) / (255)
+      ).toString(16)
+    }
+    data +=
+        Math.floor(
+          15 * getBWPixel(i) / (255)
+        ).toString(16)
   }
+
+  //data = data.replace("00", ",");
 
   return `
-        ^FO${left},${top}^GFA,${width * height},${
-    width * height
-  },${width},${data}`;
+        ^FO${left},${top}^GFA,${Math.ceil(width * height/2)},${Math.ceil(width * height/2)},${Math.ceil(width/2)},${data}`;
+
 }
 
 function buildProp(name, input, prop, images) {
@@ -241,7 +255,7 @@ testDataItem = fs.readFileSync(
 build(JSON.parse(testDataJob), JSON.parse(testDataItem).printItem[0]).then(
   (res) => {
     getTestImage(
-      "http://api.labelary.com/v1/printers/8dpmm/labels/1x1/0/",
+      "http://api.labelary.com/v1/printers/8dpmm/labels/2x2/0/",
       res
     ).then((data) => {
       var filename = __dirname + "/../../assets/ZPL_tests/output.png";
@@ -254,4 +268,4 @@ build(JSON.parse(testDataJob), JSON.parse(testDataItem).printItem[0]).then(
   }
 );
 
-module.exports.build = build;
+module.exports.build = build
