@@ -341,7 +341,7 @@ function getTestImage(url, data = "") {
         output
       );
 
-*/
+
 testDataJob = fs.readFileSync(
   __dirname + "/../../assets/ZPL_tests/test_job.json",
   "utf-8"
@@ -350,6 +350,7 @@ testDataItem = fs.readFileSync(
   __dirname + "/../../assets/ZPL_tests/test_items.json",
   "utf-8"
 );
+
 
 build(JSON.parse(testDataJob), JSON.parse(testDataItem).printItem[0]).then(
   (res) => {
@@ -366,5 +367,6 @@ build(JSON.parse(testDataJob), JSON.parse(testDataItem).printItem[0]).then(
     });
   }
 );
+*/
 
 module.exports.build = build;
