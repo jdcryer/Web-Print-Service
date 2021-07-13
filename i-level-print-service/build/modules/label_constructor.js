@@ -97,7 +97,48 @@ function buildBarcode(input, prop) {
         ^FO${left},${top}^BY${1},,^BE,${height},Y,N^FD${input}^FS\n`;
 }
 
-function buildImage(input, prop, images) {
+function buildImage(prop, img) {
+  img
+    .resize(
+      //Is not constant, made an exception for effieciency
+      parseInt(prop.width),
+      parseInt(prop.height) * 4,
+      jimp.RESIZE_NEAREST_NEIGHBOR
+    )
+    .greyscale();
+  const top = prop.top;
+  const left = prop.left;
+  const width = img.bitmap.width;
+  const height = img.bitmap.height;
+  const rgbaData = [...img.bitmap.data];
+
+  const f = (pixel, i) => {
+    //Convert each greyscale value to hex
+    const out = Math.round((15 * pixel) / 255).toString(16);
+    if (width % 2 !== 0 && (i + 1) % width === 0) {
+      //Pad odd sized images
+      return "00";
+    }
+    return out; //Scale from 0-255 to 0-15 then convert to hex
+  };
+
+  //Take every 4th value as the sequence goes rgbargbargb...
+  //Since is greyscaled we only need either r, g or b
+  const data = rgbaData
+    .filter((_, index) => index % 4 == 0)
+    .map(f)
+    .reduce((acc, x) => acc + x, "");
+
+  return `
+        ^FO${left},${top}^GFA,${Math.ceil((width * height) / 2)},${Math.ceil(
+    (width * height) / 2
+  )},${Math.ceil(width / 2)},${data}`;
+}
+
+/**
+ * @deprecated New functional version available
+ */
+function buildImageOld(input, prop, images) {
   let img = images.find((x) => x.link == input).data;
   //Image will be stretched when on the screen resize it to the given size
   //Then multiply by 4
@@ -143,23 +184,22 @@ function buildProp(input, prop, images) {
     case "field":
       return buildField(input, prop);
     case "image":
-      return buildImage(input, prop, images);
+      return buildImage(prop, images.find((x) => x.link == input).data.clone());
     default:
       throw "Property not recognised";
   }
 }
 
-
 function buildJob(items, page, props, images) {
-  const recur = (items, page, props, images) => {
-    const [item, ...tail] = items;
-    return item === undefined
-      ? "\n^XZ"
-      : buildProp(
-        item[1],
-          props[Object.keys(props).find((x) => x == item[0])],
-          images
-        ) + recur(tail, page, props, images);
+  //this function will be mapped across items
+  const f = (item) => {
+    const [name, input] = item;
+    if (name == "qty") return "";
+    return buildProp(
+      input,
+      props[Object.keys(props).find((x) => x === name)],
+      images
+    );
   };
 
   return (
@@ -169,16 +209,17 @@ function buildJob(items, page, props, images) {
   ^PQ${items.qty}
   ^CI28
   ` +
-    recur(
-      Object.entries(items).filter(([name, _]) => name !== "qty"),
-      page,
-      props,
-      images
-    )
+    Object.entries(items) //Convert items to an array of key value pairs
+      .map(f)
+      .reduce((acc, x) => acc + x, "") + //Reduce all the different objects to a string
+    `
+        ^XZ`
   );
 }
 
-//dep. dont use
+/**
+ * @deprecated New functional version available
+ */
 function buildJobOld(items, page, props, images) {
   //label setup
   let output = `^XA
@@ -204,6 +245,33 @@ function buildJobOld(items, page, props, images) {
 }
 
 function cacheImages(items) {
+  //f will be mapped acrossed items
+  const f = (item) => {
+    //Get the name and input of each item
+    const [name, input] = item;
+    if (name == "Image") {
+      return new Promise((resolve, reject) => {
+        jimp
+          .read(input) //Use Jimp to read the image
+          .then((data) => {
+            resolve({ link: input, data: data });
+          })
+          .catch((err) => {
+            reject(err);
+          });
+      });
+    }
+    return null;
+  };
+  return Object.entries(items)
+    .map(f)
+    .filter((x, index) => x !== null); //Remove any nulls from non-images
+}
+
+/**
+ * @deprecated New functional version available
+ */
+function cacheImagesOld(items) {
   let promises = [];
   Object.keys(items).forEach((x) => {
     if (x == "Image") {
@@ -246,7 +314,6 @@ function build(jobData, itemData) {
   });
 }
 
-
 function getTestImage(url, data = "") {
   return new Promise((resolve, reject) => {
     var options = {
@@ -274,7 +341,7 @@ function getTestImage(url, data = "") {
         output
       );
 
-
+*/
 testDataJob = fs.readFileSync(
   __dirname + "/../../assets/ZPL_tests/test_job.json",
   "utf-8"
@@ -299,6 +366,5 @@ build(JSON.parse(testDataJob), JSON.parse(testDataItem).printItem[0]).then(
     });
   }
 );
-*/
 
 module.exports.build = build;
