@@ -66,14 +66,23 @@ Z - Only one command, ZZ puts the printer to sleep:)
 //Why is converting UTF8 to hex so dam confusing
 
 //Taken from: https://github.com/mathiasbynens/mothereff.in
+/**
+ * @description Converts string to hex with escaped characters
+ * @param {string} s 
+ * @returns {string} escaped string
+ */
 function filterInput(s) {
   return encodeURIComponent(s).replace(/['()_*]/g, function (character) {
     return "%" + character.charCodeAt().toString(16);
   });
 }
 
-//Field Barcode Image is all thats needed
-
+/**
+ * 
+ * @param {string} input 
+ * @param {{name: {options}}} prop 
+ * @returns {string} ZPL code for a text object
+ */
 function buildField(input, prop) {
   const font = "0";
   const fontSX = prop.fontSize;
@@ -87,6 +96,12 @@ function buildField(input, prop) {
   )}^FS\n`;
 }
 
+/**
+ * 
+ * @param {string} input 
+ * @param {{name: {options}}} prop 
+ * @returns {string} ZPL code for barcode
+ */
 function buildBarcode(input, prop) {
   const top = prop.top;
   const left = prop.left;
@@ -97,6 +112,12 @@ function buildBarcode(input, prop) {
         ^FO${left},${top}^BY${1},,^BE,${height},Y,N^FD${input}^FS\n`;
 }
 
+/**
+ * 
+ * @param {{options}} prop 
+ * @param {{link: string, data: jimp}} img 
+ * @returns {string} ZPL code for image
+ */
 function buildImage(prop, img) {
   img
     .resize(
@@ -176,7 +197,13 @@ function buildImageOld(input, prop, images) {
   )},${Math.ceil(width / 2)},${data}`;
 }
 
-//Find the property type and build it for a given input
+/**
+ * 
+ * @param {string} input 
+ * @param {{options}} prop 
+ * @param {[{link: string, data: jimp}]} images 
+ * @returns {string} ZPL code for an object
+ */
 function buildProp(input, prop, images) {
   switch (prop.transformType) {
     case "barcode":
@@ -190,6 +217,14 @@ function buildProp(input, prop, images) {
   }
 }
 
+/**
+ * 
+ * @param {any} items 
+ * @param { {options} } page 
+ * @param {{obj: {options}}} props 
+ * @param {[{link: string, data: jimp}]} images 
+ * @returns {string} Combined ZPL code to build the job
+ */
 function buildJob(items, page, props, images) {
   //this function will be mapped across items
   const f = (item) => {
@@ -244,6 +279,11 @@ function buildJobOld(items, page, props, images) {
   return output + "\n^XZ";
 }
 
+/**
+ * 
+ * @param {any} items The detial part of the item object 
+ * @returns {[Promise<{link: string, data: jimp}>]} array of promises which contain the image data in the format of {link: data, data: data}
+ */
 function cacheImages(items) {
   //f will be mapped acrossed items
   const f = (item) => {
@@ -293,7 +333,11 @@ function cacheImagesOld(items) {
   return promises;
 }
 
-//Takes json build data
+/**
+ * @description Builds a single label format given the label inputs and the job format
+ * @param {any} [jobData] 
+ * @param {any} [itemData]
+ */
 function build(jobData, itemData) {
   return new Promise((resolve, reject) => {
     Promise.all(cacheImages(itemData.detail))
@@ -314,59 +358,6 @@ function build(jobData, itemData) {
   });
 }
 
-function getTestImage(url, data = "") {
-  return new Promise((resolve, reject) => {
-    var options = {
-      encoding: null,
-      formData: { file: data },
-      // omit this line to get PNG images back
-      headers: { Accept: "image/png" },
-      // adjust print density (8dpmm), label width (4 inches), label height (6 inches), and label index (0) as necessary
-      url: url,
-    };
 
-    request.post(options, function (err, resp, body) {
-      if (err) {
-        reject(err);
-      }
-      resolve({ link: url, data: body });
-    });
-  });
-}
-
-//-------testing code-------
-/*
-      fs.writeFileSync(
-        __dirname + "/../../assets/ZPL_tests/output.txt",
-        output
-      );
-
-
-testDataJob = fs.readFileSync(
-  __dirname + "/../../assets/ZPL_tests/test_job.json",
-  "utf-8"
-);
-testDataItem = fs.readFileSync(
-  __dirname + "/../../assets/ZPL_tests/test_items.json",
-  "utf-8"
-);
-
-
-build(JSON.parse(testDataJob), JSON.parse(testDataItem).printItem[0]).then(
-  (res) => {
-    getTestImage(
-      "http://api.labelary.com/v1/printers/8dpmm/labels/2x2/0/",
-      res
-    ).then((data) => {
-      var filename = __dirname + "/../../assets/ZPL_tests/output.png";
-      fs.writeFile(filename, data.data, function (err) {
-        if (err) {
-          console.log(err);
-        }
-      });
-    });
-  }
-);
-*/
 
 module.exports.build = build;
