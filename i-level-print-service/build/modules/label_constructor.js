@@ -1,7 +1,9 @@
 const fs = require("fs");
 const request = require("request");
 const jimp = require("jimp");
-
+const PIXEL_PER_MM = 140 / 50;
+const INCH_PER_MM = 1 / 25.4;
+const FONT_POINT_SIZE_INCH = 1/72;
 /*Data format
 
 printer
@@ -68,7 +70,7 @@ Z - Only one command, ZZ puts the printer to sleep:)
 //Taken from: https://github.com/mathiasbynens/mothereff.in
 /**
  * @description Converts string to hex with escaped characters
- * @param {string} s 
+ * @param {string} s
  * @returns {string} escaped string
  */
 function filterInput(s) {
@@ -77,58 +79,77 @@ function filterInput(s) {
   });
 }
 
+function convertUnits(val, dpi = 203, from = "pixel") {
+  
+  switch (from.toLowerCase()) {
+    case "pixel":
+      return (dpi * val) / (PIXEL_PER_MM * 25.4);
+    case "mm":
+      return (dpi * val) / INCH_PER_MM;
+    case "inch":
+      return dpi * val;
+    case "dots":
+      return val;
+    case "font":
+      return val * FONT_POINT_SIZE_INCH * dpi;
+    default:
+      throw `Unit ${from} is not supported`;
+  }
+}
+
 /**
- * 
- * @param {string} input 
- * @param {{name: {options}}} prop 
+ *
+ * @param {string} input
+ * @param {{name: {options}}} prop
  * @returns {string} ZPL code for a text object
  */
-function buildField(input, prop) {
+function buildField(input, prop, dpi, units) {
   const font = "0";
-  const fontSX = prop.fontSize;
-  const fontSY = prop.fontSize;
+  const fontSX = convertUnits(prop.fontSize, dpi, "font");
+  const fontSY = convertUnits(prop.fontSize, dpi, "font");
 
-  const left = prop.left;
-  const top = Math.floor(prop.top + fontSY / 2);
+  const left = convertUnits(prop.left, dpi, units);
+  const top = convertUnits(prop.top, dpi, units);
   return `
-        ^FO${left},${top}^CF${font},${fontSX},${fontSY}^FH%^FD${filterInput(
+        ^FO${left},${top}^A${font},${fontSX},${fontSY}^FH%^FD${filterInput(
     input
   )}^FS\n`;
 }
 
 /**
- * 
- * @param {string} input 
- * @param {{name: {options}}} prop 
+ *
+ * @param {string} input
+ * @param {{name: {options}}} prop
  * @returns {string} ZPL code for barcode
  */
-function buildBarcode(input, prop) {
-  const top = prop.top;
-  const left = prop.left;
-  const width = prop.width;
-  const height = prop.height;
+function buildBarcode(input, prop, dpi, units) {
+  const left = convertUnits(prop.left, dpi, units);
+  const top = convertUnits(prop.top, dpi, units);
+  const height = convertUnits(prop.height, dpi, units);
+
+  const width = convertUnits(prop.width, dpi, units)/113; //Module
 
   return `
-        ^FO${left},${top}^BY${1},,^BE,${height},Y,N^FD${input}^FS\n`;
+        ^FO${left},${top}^BY${width},,^BE,${height},Y,N^FD${input}^FS\n`;
 }
 
 /**
- * 
- * @param {{options}} prop 
- * @param {{link: string, data: jimp}} img 
+ *
+ * @param {{options}} prop
+ * @param {{link: string, data: jimp}} img
  * @returns {string} ZPL code for image
  */
-function buildImage(prop, img) {
+function buildImage(prop, img, dpi, units) {
   img
     .resize(
-      //Is not constant, made an exception for effieciency
-      parseInt(prop.width),
-      parseInt(prop.height) * 4,
+      //Is not constant, made an exception for efficiency
+      parseInt(convertUnits(prop.width, dpi, units)),
+      parseInt(convertUnits(prop.height, dpi, units)) * 4,
       jimp.RESIZE_NEAREST_NEIGHBOR
     )
     .greyscale();
-  const top = prop.top;
-  const left = prop.left;
+  const left = convertUnits(prop.left, dpi, units);
+  const top = convertUnits(prop.top, dpi, units);
   const width = img.bitmap.width;
   const height = img.bitmap.height;
   const rgbaData = [...img.bitmap.data];
@@ -198,34 +219,43 @@ function buildImageOld(input, prop, images) {
 }
 
 /**
- * 
- * @param {string} input 
- * @param {{options}} prop 
- * @param {[{link: string, data: jimp}]} images 
+ *
+ * @param {string} input
+ * @param {{options}} prop
+ * @param {[{link: string, data: jimp}]} images
+ * @param {Number} [dpi]
+ * @param {inch | mm | pixels} [units]
  * @returns {string} ZPL code for an object
  */
-function buildProp(input, prop, images) {
+function buildProp(input, prop, images, dpi, units) {
   switch (prop.transformType) {
     case "barcode":
-      return buildBarcode(input, prop);
+      return buildBarcode(input, prop, dpi, units);
     case "field":
-      return buildField(input, prop);
+      return buildField(input, prop, dpi, units);
     case "image":
-      return buildImage(prop, images.find((x) => x.link == input).data.clone());
+      return buildImage(
+        prop,
+        images.find((x) => x.link == input).data.clone(),
+        dpi,
+        units
+      );
     default:
       throw "Property not recognised";
   }
 }
 
 /**
- * 
- * @param {any} items 
- * @param { {options} } page 
- * @param {{obj: {options}}} props 
- * @param {[{link: string, data: jimp}]} images 
+ *
+ * @param {any} items
+ * @param { {options} } page
+ * @param {{obj: {options}}} props
+ * @param {[{link: string, data: jimp}]} images
+ * @param {Number} [dpi]
+ * @param {inch | mm | pixels} [units]
  * @returns {string} Combined ZPL code to build the job
  */
-function buildJob(items, page, props, images) {
+function buildJob(items, page, props, images, defaultFont, dpi, units) {
   //this function will be mapped across items
   const f = (item) => {
     const [name, input] = item;
@@ -233,14 +263,19 @@ function buildJob(items, page, props, images) {
     return buildProp(
       input,
       props[Object.keys(props).find((x) => x === name)],
-      images
+      images,
+      dpi,
+      units
     );
   };
 
   return (
     `^XA
-  ^PW${page.width}
-  ^LH${page.leftMargin},${page.topMargin}
+  ^LH${convertUnits(page.leftMargin, dpi, units)},${convertUnits(
+      page.topMargin,
+      dpi,
+      units
+    )}
   ^PQ${items.qty}
   ^CI28
   ` +
@@ -253,35 +288,8 @@ function buildJob(items, page, props, images) {
 }
 
 /**
- * @deprecated New functional version available
- */
-function buildJobOld(items, page, props, images) {
-  //label setup
-  let output = `^XA
-        ^PW${page.width}
-        ^LH${page.leftMargin},${page.topMargin}
-        ^PQ${items.qty}
-        ^CI28
-        `;
-  //----------------
-
-  //For each input for the label find its property and build it
-  Object.keys(items)
-    .filter((x) => x != "qty")
-    .forEach((pName) => {
-      output += buildProp(
-        pName,
-        items[pName],
-        props[Object.keys(props).find((x) => x == pName)],
-        images
-      );
-    });
-  return output + "\n^XZ";
-}
-
-/**
- * 
- * @param {any} items The detial part of the item object 
+ *
+ * @param {any} items The detial part of the item object
  * @returns {[Promise<{link: string, data: jimp}>]} array of promises which contain the image data in the format of {link: data, data: data}
  */
 function cacheImages(items) {
@@ -335,10 +343,12 @@ function cacheImagesOld(items) {
 
 /**
  * @description Builds a single label format given the label inputs and the job format
- * @param {any} [jobData] 
+ * @param {any} [jobData]
  * @param {any} [itemData]
+ * @param {Number} [dpi]
+ * @param {inch | mm | pixels} [units]
  */
-function build(jobData, itemData) {
+function build(jobData, itemData, dpi, units) {
   return new Promise((resolve, reject) => {
     Promise.all(cacheImages(itemData.detail))
       .then((images) => {
@@ -348,7 +358,9 @@ function build(jobData, itemData) {
             jobData.page,
             jobData.properties,
             images,
-            jobData.format.defaultFont
+            jobData.format.defaultFont,
+            dpi,
+            units
           )
         );
       })

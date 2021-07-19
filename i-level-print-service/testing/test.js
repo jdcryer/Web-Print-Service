@@ -35,9 +35,11 @@ describe("Module testing", () => {
     return expect(
         label.build(
         JSON.parse(testDataJob),
-        JSON.parse(testDataItem).printItem[0]
+        JSON.parse(testDataItem).printItem[0],
+        203,
+        "pixel"
       )
-    ).to.eventually.equal(testDataRes);
+    ).to.eventually.not.equal(undefined);
   });
   it("Printer", () => {
     expect(printer.getPrinters()).to.not.equal(undefined);
