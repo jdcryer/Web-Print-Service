@@ -1,9 +1,11 @@
 const fs = require("fs");
 const request = require("request");
 const jimp = require("jimp");
+const { resolve } = require("path");
+const Jimp = require("jimp");
 const PIXEL_PER_MM = 140 / 50;
 const INCH_PER_MM = 1 / 25.4;
-const FONT_POINT_SIZE_INCH = 1/72;
+const FONT_POINT_SIZE_INCH = 1 / 72;
 /*Data format
 
 printer
@@ -80,7 +82,6 @@ function filterInput(s) {
 }
 
 function convertUnits(val, dpi = 203, from = "pixel") {
-  
   switch (from.toLowerCase()) {
     case "pixel":
       return (dpi * val) / (PIXEL_PER_MM * 25.4);
@@ -123,14 +124,24 @@ function buildField(input, prop, dpi, units) {
  * @returns {string} ZPL code for barcode
  */
 function buildBarcode(input, prop, dpi, units) {
+  //Constants for barcode proportions
+  const TOTAL_WIDTH_TO_BARCODE_WIDTH = 0.840764331;
+  const WIDTH_TO_MODULE_WIDTH = 0.010526316;
+  const TOTAL_WIDTH_LEFT_QUIET_ZONE = 0.097217566;
+
   const left = convertUnits(prop.left, dpi, units);
   const top = convertUnits(prop.top, dpi, units);
   const height = convertUnits(prop.height, dpi, units);
 
-  const width = convertUnits(prop.width, dpi, units)/113; //Module
+  const totalWidth = convertUnits(prop.width, dpi, units);
+  const barcodeWidth = TOTAL_WIDTH_TO_BARCODE_WIDTH * totalWidth;
+  const moduleWidth = WIDTH_TO_MODULE_WIDTH * barcodeWidth;
+  const leftOffset = TOTAL_WIDTH_LEFT_QUIET_ZONE * totalWidth;
 
   return `
-        ^FO${left},${top}^BY${width},,^BE,${height},Y,N^FD${input}^FS\n`;
+        ^FO${
+          left + leftOffset
+        },${top}^BY${moduleWidth},,^BE,${height},Y,N^FD${input}^FS\n`;
 }
 
 /**
@@ -170,47 +181,6 @@ function buildImage(prop, img, dpi, units) {
     .filter((_, index) => index % 4 == 0)
     .map(f)
     .reduce((acc, x) => acc + x, "");
-
-  return `
-        ^FO${left},${top}^GFA,${Math.ceil((width * height) / 2)},${Math.ceil(
-    (width * height) / 2
-  )},${Math.ceil(width / 2)},${data}`;
-}
-
-/**
- * @deprecated New functional version available
- */
-function buildImageOld(input, prop, images) {
-  let img = images.find((x) => x.link == input).data;
-  //Image will be stretched when on the screen resize it to the given size
-  //Then multiply by 4
-  img.resize(
-    parseInt(prop.width),
-    parseInt(prop.height) * 4,
-    jimp.RESIZE_NEAREST_NEIGHBOR
-  );
-  const top = prop.top;
-  const left = prop.left;
-  const width = img.bitmap.width;
-  const height = img.bitmap.height;
-  const rgbaData = img.bitmap.data;
-  let data = "";
-
-  const getBWPixel = (index) => {
-    if (index > rgbaData.length) {
-      index = rgbaData.length - 1;
-    }
-    return (rgbaData[index] + rgbaData[index + 1] + rgbaData[index + 2]) / 3;
-  };
-
-  for (let i = 0; i < rgbaData.length; i += 4) {
-    if (width % 2 != 0 && (i / 4 + 1) % width == 0) {
-      data += Math.floor((15 * getBWPixel(i - 4)) / 255).toString(16);
-    }
-    data += Math.floor((15 * getBWPixel(i)) / 255).toString(16);
-  }
-
-  //data = data.replace("00", ",");
 
   return `
         ^FO${left},${top}^GFA,${Math.ceil((width * height) / 2)},${Math.ceil(
@@ -317,31 +287,6 @@ function cacheImages(items) {
 }
 
 /**
- * @deprecated New functional version available
- */
-function cacheImagesOld(items) {
-  let promises = [];
-  Object.keys(items).forEach((x) => {
-    if (x == "Image") {
-      promises.push(
-        new Promise((resolve, reject) => {
-          jimp
-            .read(items[x])
-            .then((data) => {
-              resolve({ link: items[x], data: data });
-            })
-            .catch((err) => {
-              reject(err);
-            });
-        })
-      );
-    }
-  });
-
-  return promises;
-}
-
-/**
  * @description Builds a single label format given the label inputs and the job format
  * @param {any} [jobData]
  * @param {any} [itemData]
@@ -369,7 +314,5 @@ function build(jobData, itemData, dpi, units) {
       });
   });
 }
-
-
 
 module.exports.build = build;
