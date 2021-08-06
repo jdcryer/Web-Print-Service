@@ -40,7 +40,7 @@ function updateConfig() {
       changedConfig = true;
     }
 
-    Object.assign(p, con);
+    return Object.assign(p, con);
   });
 
   if (changedConfig) {

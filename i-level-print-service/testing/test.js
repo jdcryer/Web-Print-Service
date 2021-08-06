@@ -1,11 +1,11 @@
 const chai = require("chai");
-const chaiAsPromised = require('chai-as-promised')
+const chaiAsPromised = require("chai-as-promised");
 const expect = chai.expect;
 const label = require("../build/modules/label_constructor");
 const printer = require("../build/modules/printer");
 const fs = require("fs");
 
-chai.use(chaiAsPromised)
+chai.use(chaiAsPromised);
 
 function getTestImage(url, data = "") {
   return new Promise((resolve, reject) => {
@@ -31,14 +31,20 @@ describe("Module testing", () => {
   it("Label constructor", () => {
     testDataJob = fs.readFileSync(__dirname + "/job.json", "utf-8");
     testDataItem = fs.readFileSync(__dirname + "/items.json", "utf-8");
-    testDataRes = fs.readFileSync(__dirname + "/result_zpl.txt", "utf-8");
     return expect(
+      new Promise((resolve, reject) => {
         label.build(
-        JSON.parse(testDataJob),
-        JSON.parse(testDataItem).printItem[0],
-        203,
-        "pixel"
-      )
+          JSON.parse(testDataJob),
+          JSON.parse(testDataItem).printItem[0],
+          203,
+          "pixel"
+        ).then((data) => {
+          fs.writeFileSync("output.txt", data);
+          resolve(data);
+        }).catch((err) => {
+          throw err;
+        });
+      })
     ).to.eventually.not.equal(undefined);
   });
   it("Printer", () => {

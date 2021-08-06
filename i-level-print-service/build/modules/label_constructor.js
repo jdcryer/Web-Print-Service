@@ -98,6 +98,21 @@ function convertUnits(val, dpi = 203, from = "pixel") {
   }
 }
 
+function getRot(rot){
+  switch (rot.toString()){
+    case "0":
+      return "N";
+    case "1":
+      return "R";
+    case "2":
+      return "I";
+    case "3":
+      return "B";
+    default:
+      throw `Invalid rotation "${rot}"`
+  }
+}
+
 /**
  *
  * @param {string} input
@@ -105,22 +120,25 @@ function convertUnits(val, dpi = 203, from = "pixel") {
  * @returns {string} ZPL code for a text object
  */
 function buildField(input, prop, dpi, units) {
-  const font = "0";
+  const font = prop.fontStyle;
   const fontSX = convertUnits(prop.fontSize, dpi, "font");
   const fontSY = convertUnits(prop.fontSize, dpi, "font");
+  const rotation = getRot(prop.rotation);
 
   const left = convertUnits(prop.left, dpi, units);
   const top = convertUnits(prop.top, dpi, units);
   return `
-        ^FO${left},${top}^A${font},${fontSX},${fontSY}^FH%^FD${filterInput(
+        ^FO${left},${top}^A${font}${rotation},${fontSX},${fontSY}^FH%^FD${filterInput(
     input
   )}^FS\n`;
 }
 
 /**
  *
- * @param {string} input
+ * @param {String} input
  * @param {{name: {options}}} prop
+ * @param {Number} dpi
+ * @param {String} units inch, mm, pixel, font
  * @returns {string} ZPL code for barcode
  */
 function buildBarcode(input, prop, dpi, units) {
@@ -132,6 +150,7 @@ function buildBarcode(input, prop, dpi, units) {
   const left = convertUnits(prop.left, dpi, units);
   const top = convertUnits(prop.top, dpi, units);
   const height = convertUnits(prop.height, dpi, units);
+  const rotation = getRot(prop.rotation);
 
   const totalWidth = convertUnits(prop.width, dpi, units);
   const barcodeWidth = TOTAL_WIDTH_TO_BARCODE_WIDTH * totalWidth;
@@ -141,13 +160,15 @@ function buildBarcode(input, prop, dpi, units) {
   return `
         ^FO${
           left + leftOffset
-        },${top}^BY${moduleWidth},,^BE,${height},Y,N^FD${input}^FS\n`;
+        },${top}^BY${Math.round(moduleWidth)},,^BE${rotation},${height},Y,N^FD${input}^FS\n`;
 }
 
 /**
  *
  * @param {{options}} prop
  * @param {{link: string, data: jimp}} img
+ * @param {Number} dpi
+ * @param {String} units inch, mm, pixel, font
  * @returns {string} ZPL code for image
  */
 function buildImage(prop, img, dpi, units) {
@@ -193,8 +214,8 @@ function buildImage(prop, img, dpi, units) {
  * @param {string} input
  * @param {{options}} prop
  * @param {[{link: string, data: jimp}]} images
- * @param {Number} [dpi]
- * @param {inch | mm | pixels} [units]
+ * @param {Number} dpi
+ * @param {String} units inch, mm, pixel, font
  * @returns {string} ZPL code for an object
  */
 function buildProp(input, prop, images, dpi, units) {
@@ -221,8 +242,8 @@ function buildProp(input, prop, images, dpi, units) {
  * @param { {options} } page
  * @param {{obj: {options}}} props
  * @param {[{link: string, data: jimp}]} images
- * @param {Number} [dpi]
- * @param {inch | mm | pixels} [units]
+ * @param {Number} dpi
+ * @param {String} units inch, mm, pixel, font
  * @returns {string} Combined ZPL code to build the job
  */
 function buildJob(items, page, props, images, defaultFont, dpi, units) {
@@ -290,8 +311,8 @@ function cacheImages(items) {
  * @description Builds a single label format given the label inputs and the job format
  * @param {any} [jobData]
  * @param {any} [itemData]
- * @param {Number} [dpi]
- * @param {inch | mm | pixels} [units]
+ * @param {Number} dpi
+ * @param {String} units inch, mm, pixel, font
  */
 function build(jobData, itemData, dpi, units) {
   return new Promise((resolve, reject) => {
