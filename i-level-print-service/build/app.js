@@ -9,7 +9,7 @@ require("dotenv").config();
 let apiInstance = new api({
   user: process.env.USER,
   pass: process.env.PASS,
-  printerId: process.env.PRINTER_ID,
+  printerIds: [process.env.PRINTER_ID, "FFC4C93FAF50E1458F5AF0EBC6D3AF7A"],
 });
 
 apiInstance.startPrintJobListener(); // Currently only handles one printerId at once...

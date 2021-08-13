@@ -1,18 +1,20 @@
-const { get } = require("axios");
+const axios = require("axios");
+const { build } = require("./label_constructor");
+const { sendPrint } = require("./printer");
 
 class Api {
-  constructor({ user, pass, printerId }) {
+  constructor({ user, pass, printerIds }) {
     this.user = user;
     this.pass = pass;
-    this.printerId = printerId;
+    this.printerIds = printerIds;
     this.running = true;
     this.failures = 0;
   }
 
-  updateDetails({ user, pass, printerId }) {
+  updateDetails({ user, pass, printerIds }) {
     this.user = user ?? this.user;
     this.pass = pass ?? this.pass;
-    this.printerId = printerId ?? this.printerId;
+    this.printerIds = printerIds ?? this.printerIds;
     this.failures = 0;
   }
 
@@ -21,19 +23,42 @@ class Api {
     this.failures = 0;
   }
 
+  buildPrinterIdQuery = () => ({
+    querywitharray: {
+      field: "fk_printer",
+      values: this.printerIds,
+    },
+  });
+
   buildJobCountUrl = () =>
-    `https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/print/printjob/count?fk_printer=${this.printerId}`;
+    `https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/print/printjob/query/count`;
 
   buildJobUrl = (page = 1) =>
-    `https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/print/printjob?fk_printer=${this.printerId}&fields=id,page,properties,format,createdDate&page=${page}`;
+    `https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/print/printjob/query?fields=id,page,properties,format,createdDate&page=${page}`;
+
+  deleteJobUrl = (jobId) =>
+    `https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/print/printjob/${jobId}`;
 
   buildItemsUrl = (jobId, page = 1) =>
     `https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/print/printitem?fk_printjob=${jobId}&fields=detail&page=${page}`;
 
   async getJobCountAsync() {
     try {
-      const res = await get(this.buildJobCountUrl());
+      const res = await axios.post(
+        this.buildJobCountUrl(),
+        this.buildPrinterIdQuery()
+      );
       return { success: true, data: res.data.count };
+    } catch (error) {
+      return { success: false, error: error };
+    }
+  }
+
+  async deleteJobAsync(jobId) {
+    try {
+      const res = await axios.delete(this.deleteJobUrl(jobId));
+      if (res.Response === "OK") return { success: true };
+      return { success: false };
     } catch (error) {
       return { success: false, error: error };
     }
@@ -45,7 +70,10 @@ class Api {
     let numOnPage = 0;
     try {
       do {
-        let res = await get(this.buildJobUrl(page));
+        let res = await axios.post(
+          this.buildJobUrl(page),
+          this.buildPrinterIdQuery()
+        );
         numOnPage = res.data.response.recordsSent;
         if (numOnPage > 0) jobs = jobs.concat(res.data.response.printJob);
         page++;
@@ -62,7 +90,7 @@ class Api {
     let numOnPage = 0;
     try {
       do {
-        let res = await get(this.buildItemsUrl(jobId, page));
+        let res = await axios.get(this.buildItemsUrl(jobId, page));
         numOnPage = res.data.response.recordsSent;
         if (numOnPage > 0)
           itemData = itemData.concat(res.data.response.printItem);
@@ -87,6 +115,7 @@ class Api {
               }
               return;
             }
+            console.log("Number of jobs: " + res.data);
 
             if (res.data === 0) return;
 
@@ -101,6 +130,30 @@ class Api {
               jobArray.push({ job: jobs.data[i], items: items.data });
             }
             console.log(jobArray); // DO SOMETHING WITH JOBS HERE
+            for (let i = 0; i < jobArray.length; i++) {
+              for (let j = 0; j < jobArray[i].items.length; j++) {
+                const zpl = await build(
+                  jobArray[i].job,
+                  jobArray[i].items[j],
+                  203,
+                  "pixel"
+                );
+
+                try {
+                  const printSuccess = await sendPrint(
+                    "ZDesigner GX420d (1)",
+                    zpl,
+                    ""
+                  );
+                  const z = await this.deleteJobAsync(jobArray[i].job.id);
+                } catch (err) {
+                  console.log(
+                    `Failed to delete print job ${jobArray[i].job.id}.`
+                  );
+                }
+              }
+            }
+
             // Maybe we should add jobs to a parent array outside of API?
             // That would mean that a separate listener pulls jobs off of the parent array as they appear, and print them.
             // Would be a better way to handle multiple printers? So printing from one printer doesn't hold back printing from another.

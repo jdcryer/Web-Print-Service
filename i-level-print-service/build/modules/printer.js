@@ -20,22 +20,26 @@ function saveConfig() {
 //If a printer has no config it will be assigned a defualt one and saved to file
 function updateConfig() {
   changedConfig = false;
-  let printerData  = printer.getPrinters().map((el) => {
+  let printerData = printer.getPrinters().map((el) => {
     const p = {
       name: el.name,
       shareName: el.shareName,
       statusNumber: el.statusNumber,
-      online: el.attributes.find((x) => x == "OFFLINE") != undefined ? false : true
+      online:
+        el.attributes.find((x) => x == "OFFLINE") != undefined ? false : true,
     };
 
     const con = getPrinterConfig(el.name);
     if (con == undefined) {
-      const output = Object.assign({
-        name: el.name,
-        enabled: true,
-        displayName: el.name,
-        acceptedTypes: [],
-      }, p);
+      const output = Object.assign(
+        {
+          name: el.name,
+          enabled: true,
+          displayName: el.name,
+          acceptedTypes: [],
+        },
+        p
+      );
       config.push(output);
       changedConfig = true;
     }
