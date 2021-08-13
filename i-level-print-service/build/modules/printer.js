@@ -16,7 +16,15 @@ function saveConfig() {
   );
 }
 
-//Gets all the printers and matches them to their config in printe-config.json
+function addPrinterId(name, id) {
+  // Given a printer name and ID, put that printer ID on that printer object
+}
+
+function getPrinterById(id) {
+  // Given a printer name and ID, return that printer name
+}
+
+//Gets all the printers and matches them to their config in printer-config.json
 //If a printer has no config it will be assigned a defualt one and saved to file
 function updateConfig() {
   changedConfig = false;
@@ -65,7 +73,7 @@ function sendPrint(printerName, data, printType) {
   return new Promise((resolve, reject) => {
     let p = getPrinters().find((x) => x.name == printerName);
     if (p == undefined) {
-      reject("printer does not exists");
+      reject("printer does not exist");
       return;
     }
 
@@ -90,3 +98,5 @@ updateConfig();
 
 module.exports.getPrinters = getPrinters;
 module.exports.sendPrint = sendPrint;
+module.exports.addPrinterId = addPrinterId;
+module.exports.getPrinterById = getPrinterById;

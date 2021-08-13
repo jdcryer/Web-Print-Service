@@ -1,6 +1,6 @@
 const axios = require("axios");
 const { build } = require("./label_constructor");
-const { sendPrint } = require("./printer");
+const { sendPrint, addPrinterId, getPrinterById } = require("./printer");
 
 class Api {
   constructor({ user, pass, printerIds }) {
@@ -30,25 +30,43 @@ class Api {
     },
   });
 
-  buildJobCountUrl = () =>
+  getJobCountUrl = () =>
     `https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/print/printjob/query/count`;
 
-  buildJobUrl = (page = 1) =>
+  getJobUrl = (page = 1) =>
     `https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/print/printjob/query?fields=id,page,properties,format,createdDate&page=${page}`;
 
   deleteJobUrl = (jobId) =>
     `https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/print/printjob/${jobId}`;
 
-  buildItemsUrl = (jobId, page = 1) =>
+  getItemsUrl = (jobId, page = 1) =>
     `https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/print/printitem?fk_printjob=${jobId}&fields=detail&page=${page}`;
+
+  postNewPrinterUrl = () =>
+    `https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/print/printer`;
 
   async getJobCountAsync() {
     try {
       const res = await axios.post(
-        this.buildJobCountUrl(),
+        this.getJobCountUrl(),
         this.buildPrinterIdQuery()
       );
       return { success: true, data: res.data.count };
+    } catch (error) {
+      return { success: false, error: error };
+    }
+  }
+
+  async postNewPrinterAsync(userId, printerName, displayName, type, isPublic) {
+    try {
+      const res = await axios.post(this.postNewPrinterUrl(), {
+        fk_user: userId,
+        name: displayName,
+        type: type,
+        public: isPublic,
+      });
+      addPrinterId(printerName, res.data.id);
+      return { success: true, data: res.data };
     } catch (error) {
       return { success: false, error: error };
     }
@@ -71,7 +89,7 @@ class Api {
     try {
       do {
         let res = await axios.post(
-          this.buildJobUrl(page),
+          this.getJobUrl(page),
           this.buildPrinterIdQuery()
         );
         numOnPage = res.data.response.recordsSent;
@@ -90,7 +108,7 @@ class Api {
     let numOnPage = 0;
     try {
       do {
-        let res = await axios.get(this.buildItemsUrl(jobId, page));
+        let res = await axios.get(this.getItemsUrl(jobId, page));
         numOnPage = res.data.response.recordsSent;
         if (numOnPage > 0)
           itemData = itemData.concat(res.data.response.printItem);
@@ -129,6 +147,7 @@ class Api {
 
               jobArray.push({ job: jobs.data[i], items: items.data });
             }
+
             console.log(jobArray); // DO SOMETHING WITH JOBS HERE
             for (let i = 0; i < jobArray.length; i++) {
               for (let j = 0; j < jobArray[i].items.length; j++) {
@@ -141,7 +160,7 @@ class Api {
 
                 try {
                   const printSuccess = await sendPrint(
-                    "ZDesigner GX420d (1)",
+                    getPrinterById(jobArray[i].job.id),
                     zpl,
                     ""
                   );

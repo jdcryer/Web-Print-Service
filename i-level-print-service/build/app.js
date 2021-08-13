@@ -9,13 +9,31 @@ require("dotenv").config();
 let apiInstance = new api({
   user: process.env.USER,
   pass: process.env.PASS,
-  printerIds: [process.env.PRINTER_ID, "FFC4C93FAF50E1458F5AF0EBC6D3AF7A"],
+  printerIds: process.env.PRINTER_IDS.split(","), // needs to get this from printer-config.json
 });
 
-apiInstance.startPrintJobListener(); // Currently only handles one printerId at once...
+apiInstance.startPrintJobListener();
 
 app.use(express.json());
 //app.use(express.static("public"));
+
+app.get("/newPrinter", async (req, res) => {
+  const newUser = await apiInstance.postNewPrinterAsync(
+    req.query.userId,
+    req.query.printerName,
+    req.query.displayName,
+    req.query.type,
+    true
+  );
+  if (newUser.success) {
+    console.log(newUser.data);
+    res.send(
+      `Success!  New printer ID: ${newUser.data.id}.  Printer ID has been added to config.`
+    );
+  } else {
+    console.error(newUser.error);
+  }
+});
 
 app.post("/img", (req, res, next) => {
   res.send(fs.readFileSync(__dirname + "/../assets/ZPL_tests/output.bmp"));
