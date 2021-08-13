@@ -1,8 +1,4 @@
-const fs = require("fs");
-const request = require("request");
 const jimp = require("jimp");
-const { resolve } = require("path");
-const Jimp = require("jimp");
 const PIXEL_PER_MM = 140 / 50;
 const INCH_PER_MM = 1 / 25.4;
 const FONT_POINT_SIZE_INCH = 1 / 72;
