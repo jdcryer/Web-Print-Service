@@ -4,7 +4,7 @@ const printer = require("./modules/printer");
 const labelConstructor = require("./modules/label_constructor");
 const api = require("./modules/api");
 const app = express();
-require("dotenv").config();
+//require("dotenv").config();
 
 let apiInstance = new api({
   user: process.env.USER,

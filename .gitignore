@@ -114,3 +114,5 @@ i-level-print-service/assets/ZPL_tests/output.png
 i-level-print-service/.vscode/launch.json
 
 output.txt
+printer-config.json
+user-profile.json
