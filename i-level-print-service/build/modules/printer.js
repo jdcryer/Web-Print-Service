@@ -12,7 +12,6 @@ try {
   fs.writeFileSync(PRINT_CONFIG_PATH, JSON.stringify(config));
 }
 
-
 function getPrinterConfig(name) {
   return config.find((x) => x.name == name);
 }
@@ -25,7 +24,7 @@ function addPrinterId(name, id) {
   // Given a printer name and ID, put that printer ID on that printer object
   updateConfig(); //Printer data
   let found = false;
-  config.map((el) => {
+  config = config.map((el) => {
     if (el.name == name) {
       el.id = id;
       found = true;
@@ -33,16 +32,18 @@ function addPrinterId(name, id) {
     return el;
   });
 
-  if(!found) {console.error(`Could not match printer name "${name}" to a printer`);
-return false;}
+  if (!found) {
+    console.error(`Could not match printer name "${name}" to a printer`);
+    return false;
+  }
   saveConfig();
   return true;
 }
 
 function getPrinterById(id) {
   // Given a printer name and ID, return that printer name
-  const pd = getPrinterConfig(); 
-  return pd.find(x => x == id);
+  const pd = getPrinterConfig();
+  return pd.find((x) => x == id);
 }
 
 //Gets all the printers and matches them to their config in printer-config.json
