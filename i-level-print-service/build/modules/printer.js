@@ -30,11 +30,13 @@ function addPrinterId(name, id) {
       el.id = id;
       found = true;
     }
-
-    if(!found) console.error(`Could not match printer name "${name}" to a printer`);
-    saveConfig();
     return el;
   });
+
+  if(!found) {console.error(`Could not match printer name "${name}" to a printer`);
+return false;}
+  saveConfig();
+  return true;
 }
 
 function getPrinterById(id) {
