@@ -3,14 +3,13 @@ This is the i Level Print Service
 
 ## Installation
 ### Windows
-To install the service, run the Install.bat file. This will install the software as a service that starts on your machine startup.
+To install the service, run the Install.bat in "Windows/x64/". This will install the software as a service that starts on your machine startup.
 
 ## Running the application
 The application should have be running as a service on your computer, to check that it is got to:
 1. Task manager
 2. click the service tab
-3. sort by Name
-4. find the i-level-print-service and check its status is running
+3. find the i-level-print-service and check its status is running
 
 To access the application on your machine, go to [localhost:3000](localhost:3000) in your browser. This will bring up the application itself.
 
@@ -25,13 +24,13 @@ it will create a new file that will have:
 ```
 The program will wait until these two objects have values to start. Once you save your credentials to that file the server will start its main processes.
 
-Your login information is only loaded once, so if you need to change it restart the application
+Your login information is only loaded once, so if you need to change it restart service using the Stop Servicec and Start Service files.
 
 # Interface
 As stated earlier go to [localhost:3000](localhost:3000) to see the current configuration of printers. There is yet to be an interactive UI.
 
 # Configuration
-To configure printers there is a file in /i-level-print-service/ folder called printer-configuration.json which is auto generated the first time. The current information stored about printers are:
+To configure printers there is a file in /i-level-print-service/ folder called printer-configuration.json which is auto generated the first time the service runs. The current information stored about printers are:
 
 ```json
 {
