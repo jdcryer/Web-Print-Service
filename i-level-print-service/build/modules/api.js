@@ -34,7 +34,7 @@ class Api {
     `https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/print/printjob/query/count`;
 
   getJobUrl = (page = 1) =>
-    `https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/print/printjob/query?fields=id,page,properties,format,createdDate&page=${page}`;
+    `https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/print/printjob/query?fields=id,page,properties,format,createdDate,fk_printer&page=${page}`;
 
   deleteJobUrl = (jobId) =>
     `https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/print/printjob/${jobId}`;
@@ -160,7 +160,7 @@ class Api {
 
                 try {
                   const printSuccess = await sendPrint(
-                    getPrinterById(jobArray[i].job.id),
+                    getPrinterById(jobArray[i].job.fk_printer),
                     zpl,
                     ""
                   );

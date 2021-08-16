@@ -6,10 +6,15 @@ const api = require("./modules/api");
 const app = express();
 //require("dotenv").config();
 
+const ids = printer
+  .getPrinters()
+  .filter((x) => x.id !== undefined)
+  .map((x) => x.id);
+console.log(ids);
 let apiInstance = new api({
   user: process.env.USER,
   pass: process.env.PASS,
-  printerIds: process.env.PRINTER_IDS.split(","), // needs to get this from printer-config.json
+  printerIds: ids, // needs to get this from printer-config.json
 });
 
 apiInstance.startPrintJobListener();
@@ -30,6 +35,17 @@ app.get("/newPrinter", async (req, res) => {
     res.send(
       `Success!  New printer ID: ${newUser.data.id}.  Printer ID has been added to config.`
     );
+    let ids = printer
+      .getPrinters()
+      .filter((x) => x.id !== undefined)
+      .map((x) => x.id);
+    console.log(ids);
+
+    apiInstance.updateDetails({
+      user: process.env.USER,
+      pass: process.env.PASS,
+      printerIds: ids,
+    });
   } else {
     console.error(newUser.error);
   }

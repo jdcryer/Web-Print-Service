@@ -23,27 +23,22 @@ function saveConfig() {
 function addPrinterId(name, id) {
   // Given a printer name and ID, put that printer ID on that printer object
   updateConfig(); //Printer data
-  let found = false;
-  config = config.map((el) => {
-    if (el.name == name) {
-      el.id = id;
-      found = true;
-    }
-    return el;
-  });
 
-  if (!found) {
+  const index = config.findIndex((x) => x.name === name);
+  if (index === -1) {
     console.error(`Could not match printer name "${name}" to a printer`);
     return false;
   }
+  config[index].id = id;
+  config[index].enabled = true;
   saveConfig();
   return true;
 }
 
 function getPrinterById(id) {
   // Given a printer name and ID, return that printer name
-  const pd = getPrinterConfig();
-  return pd.find((x) => x == id);
+  const pd = getPrinters();
+  return pd.find((x) => x.id === id)?.name;
 }
 
 //Gets all the printers and matches them to their config in printer-config.json
