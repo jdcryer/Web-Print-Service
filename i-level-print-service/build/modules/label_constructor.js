@@ -1,4 +1,6 @@
 const jimp = require("jimp");
+const https = require("https");
+const { readdirSync } = require("fs");
 const PIXEL_PER_MM = 140 / 50;
 const INCH_PER_MM = 1 / 25.4;
 const FONT_POINT_SIZE_INCH = 1 / 72;
@@ -94,8 +96,8 @@ function convertUnits(val, dpi = 203, from = "pixel") {
   }
 }
 
-function getRot(rot){
-  switch (rot.toString()){
+function getRot(rot) {
+  switch (rot.toString()) {
     case "0":
       return "N";
     case "1":
@@ -105,7 +107,7 @@ function getRot(rot){
     case "3":
       return "B";
     default:
-      throw `Invalid rotation "${rot}"`
+      throw `Invalid rotation "${rot}"`;
   }
 }
 
@@ -125,7 +127,7 @@ function buildField(input, prop, dpi, units) {
   const top = convertUnits(prop.top, dpi, units);
   return `
         ^FO${left},${top}^A${font}${rotation},${fontSX},${fontSY}^FH%^FD${filterInput(
-    input
+    prop.label ? prop.label + " " + input : input
   )}^FS\n`;
 }
 
@@ -154,9 +156,9 @@ function buildBarcode(input, prop, dpi, units) {
   const leftOffset = TOTAL_WIDTH_LEFT_QUIET_ZONE * totalWidth;
 
   return `
-        ^FO${
-          left + leftOffset
-        },${top}^BY${Math.round(moduleWidth)},,^BE${rotation},${height},Y,N^FD${input}^FS\n`;
+        ^FO${left + leftOffset},${top}^BY${Math.round(
+    moduleWidth
+  )},,^BE${rotation},${height},Y,N^FD${input}^FS\n`;
 }
 
 /**
@@ -274,6 +276,17 @@ function buildJob(items, page, props, images, defaultFont, dpi, units) {
   );
 }
 
+function addAuthToURL(url) {
+  const [user, pass] = [process.env.USER, process.env.pass];
+
+  if (url.includes("https")) {
+    const splitUrl = url.split("https://");
+    return "https://" + `${user}:${pass}@` + splitUrl[1];
+  } else {
+    throw "Image url not in ilevel domain";
+  }
+}
+
 /**
  *
  * @param {any} items The detial part of the item object
@@ -283,24 +296,35 @@ function cacheImages(items) {
   //f will be mapped acrossed items
   const f = (item) => {
     //Get the name and input of each item
-    const [name, input] = item;
-    if (name == "Image") {
+    let output = [];
+    const [_, value] = item;
+    if (value.transformType == "image") {
       return new Promise((resolve, reject) => {
-        jimp
-          .read(input) //Use Jimp to read the image
-          .then((data) => {
-            resolve({ link: input, data: data });
-          })
-          .catch((err) => {
-            reject(err);
+        https.get(addAuthToURL(value.imageUrl), (res) => {
+          console.log(res);
+          res.on("data", (imageBuffer) => {
+            jimp
+              .read(imageBuffer) //Use Jimp to read the image
+              .then((data) => {
+                resolve({ link: value.imageUrl, data: data });
+              })
+              .catch((err) => {
+                reject(err);
+              });
           });
+
+          res.on("error", (err) => {
+            console.error(err);
+            throw err;
+          });
+        });
       });
     }
     return null;
   };
   return Object.entries(items)
     .map(f)
-    .filter((x, index) => x !== null); //Remove any nulls from non-images
+    .filter((x) => x !== null); //Remove any nulls from non-images
 }
 
 /**
@@ -312,7 +336,7 @@ function cacheImages(items) {
  */
 function build(jobData, itemData, dpi, units) {
   return new Promise((resolve, reject) => {
-    Promise.all(cacheImages(itemData.detail))
+    Promise.all(cacheImages(jobData.properties))
       .then((images) => {
         resolve(
           buildJob(

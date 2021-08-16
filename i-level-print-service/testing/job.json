@@ -82,6 +82,7 @@
 		},
 		"Image": {
 			"transformType": "image",
+			"imageUrl": "./testing/test.png",
 			"left": 5,
 			"top": 75,
 			"width": 64,
