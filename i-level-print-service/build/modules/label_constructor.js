@@ -117,16 +117,20 @@ function getRot(rot) {
  * @returns {string} ZPL code for a text object
  */
 function buildField(input, prop, dpi, units) {
-  const font = prop.fontStyle;
-  const fontSX = convertUnits(prop.fontSize, dpi, "font");
-  const fontSY = convertUnits(prop.fontSize, dpi, "font");
-  const rotation = getRot(prop.rotation);
+  if(!(prop.left !== undefined && prop.top !== undefined)){
+    throw "Job data is missing required attributes in Text field";
+  }
+
+  const font = prop.fontStyle !== undefined ? prop.fontStyle : "";
+  const fontSX = fontSY = prop.fontSize !== undefined ? convertUnits(prop.fontSize, dpi, "font") : "";
+  const rotation = prop.rotation !== undefined ? getRot(prop.rotation) : "";
 
   const left = convertUnits(prop.left, dpi, units);
   const top = convertUnits(prop.top, dpi, units);
+
   return `
-        ^FO${left},${top}^A${font}${rotation},${fontSX},${fontSY}^FH%^FD${filterInput(
-    prop.label ? prop.label + " " + input : input
+        ^FO${left},${top}^A${ font + rotation},${fontSX},${fontSY}^FH%^FD${filterInput(
+    prop.label !== undefined ? prop.label + " " + input : input
   )}^FS\n`;
 }
 
@@ -139,6 +143,11 @@ function buildField(input, prop, dpi, units) {
  * @returns {string} ZPL code for barcode
  */
 function buildBarcode(input, prop, dpi, units) {
+
+  if(!(prop.left !== undefined && prop.top !== undefined && prop.height !== undefined && prop.width !== undefined)){
+    throw "Job data is missing required attributes in Barcode";
+  }
+
   //Constants for barcode proportions
   const TOTAL_WIDTH_TO_BARCODE_WIDTH = 0.840764331;
   const WIDTH_TO_MODULE_WIDTH = 0.010526316;
@@ -147,12 +156,15 @@ function buildBarcode(input, prop, dpi, units) {
   const left = convertUnits(prop.left, dpi, units);
   const top = convertUnits(prop.top, dpi, units);
   const height = convertUnits(prop.height, dpi, units);
-  const rotation = getRot(prop.rotation);
+  const rotation = prop.rotation !== undefined ? getRot(prop.rotation) : "";
+
 
   const totalWidth = convertUnits(prop.width, dpi, units);
   const barcodeWidth = TOTAL_WIDTH_TO_BARCODE_WIDTH * totalWidth;
   const moduleWidth = WIDTH_TO_MODULE_WIDTH * barcodeWidth;
   const leftOffset = TOTAL_WIDTH_LEFT_QUIET_ZONE * totalWidth;
+
+  
 
   return `
         ^FO${left + leftOffset},${top}^BY${Math.round(
@@ -169,6 +181,12 @@ function buildBarcode(input, prop, dpi, units) {
  * @returns {string} ZPL code for image
  */
 function buildImage(prop, img, dpi, units) {
+
+  if(!(prop.left !== undefined && prop.top !== undefined)){
+    throw "Job data is missing required attributes in Image";
+  }
+
+  if(prop.width && prop.height){
   img
     .resize(
       //Is not constant, made an exception for efficiency
@@ -176,12 +194,16 @@ function buildImage(prop, img, dpi, units) {
       parseInt(convertUnits(prop.height, dpi, units)) * 4,
       jimp.RESIZE_NEAREST_NEIGHBOR
     )
-    .greyscale();
+  }
+
+  img.greyscale();
   const left = convertUnits(prop.left, dpi, units);
   const top = convertUnits(prop.top, dpi, units);
   const width = img.bitmap.width;
   const height = img.bitmap.height;
   const rgbaData = [...img.bitmap.data];
+
+  
 
   const f = (pixel, i) => {
     //Convert each greyscale value to hex
@@ -266,6 +288,7 @@ function buildJob(items, page, props, images, defaultFont, dpi, units) {
     )}
   ^PQ${items.qty}
   ^CI28
+  ^CF${defaultFont.font},${defaultFont.size},${defaultFont.size}
   ` +
     Object.entries(items) //Convert items to an array of key value pairs
       .map(f)
@@ -300,12 +323,12 @@ function cacheImages(items) {
     if (value.transformType == "image") {
       return new Promise((resolve, reject) => {
         axios
-          .get(addAuthToURL(value.imageUrl), { responseType: "arraybuffer" })
+          .get(value.imageUrl, { responseType: "arraybuffer" })
           .then((imageBuffer) => {
             jimp
-              .read(imageBuffer)
+              .read(imageBuffer.data)
               .then((data) => {
-                resolve(data);
+                resolve({link: value.imageUrl, data: data});
               })
               .catch((err) => {
                 reject(err);
