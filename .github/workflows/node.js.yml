@@ -16,7 +16,7 @@ jobs:
     
     defaults:
       run:
-        working-directory: ./i-level-print-service
+        working-directory: ./main
 
     strategy:
       matrix:
