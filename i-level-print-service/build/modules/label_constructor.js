@@ -1,6 +1,5 @@
 const jimp = require("jimp");
-const https = require("https");
-const { readdirSync } = require("fs");
+const axios = require("axios");
 const PIXEL_PER_MM = 140 / 50;
 const INCH_PER_MM = 1 / 25.4;
 const FONT_POINT_SIZE_INCH = 1 / 72;
@@ -300,24 +299,21 @@ function cacheImages(items) {
     const [_, value] = item;
     if (value.transformType == "image") {
       return new Promise((resolve, reject) => {
-        https.get(addAuthToURL(value.imageUrl), (res) => {
-          console.log(res);
-          res.on("data", (imageBuffer) => {
+        axios
+          .get(addAuthToURL(value.imageUrl), { responseType: "arraybuffer" })
+          .then((imageBuffer) => {
             jimp
-              .read(imageBuffer) //Use Jimp to read the image
+              .read(imageBuffer)
               .then((data) => {
-                resolve({ link: value.imageUrl, data: data });
+                resolve(data);
               })
               .catch((err) => {
                 reject(err);
               });
+          })
+          .catch((err) => {
+            reject(err);
           });
-
-          res.on("error", (err) => {
-            console.error(err);
-            throw err;
-          });
-        });
       });
     }
     return null;
