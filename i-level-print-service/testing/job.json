@@ -1,76 +1,75 @@
 {
-	"id": "E9C8C07271193145B9534A333E6DADBF",
+	"id": "B2339B85254853468411708C755A12A6",
 	"fk_printFormat": "16BD85B70DC93B4C801DCD38E884DCE3",
-	"fk_printer": "8E4D1AF27B204347876720FF42943112",
+	"fk_printer": "CEDD0D88C6C3934A87A726C7EA7B7E63",
 	"printType": "json",
 	"page": {
 		"format": "dynamic",
-		"width": 300,
+		"width": 140,
 		"height": 70,
-		"leftMargin": 0,
+		"leftMargin": 2,
 		"rightMargin": 0,
-		"topMargin": 0,
+		"topMargin": 2,
 		"bottomMargin": 0
 	},
 	"properties": {
 		"Style": {
-			"transformType": "field",
 			"rotation": 0,
 			"left": 5,
 			"top": 0,
 			"font": "Arial",
 			"fontStyle": 0,
-			"fontSize": 10
+			"fontSize": 10,
+			"transformType": "field"
 		},
 		"Article": {
-			"transformType": "field",
 			"rotation": 0,
 			"left": 5,
-			"top": 52,
+			"top": 55,
 			"font": "Arial",
 			"fontStyle": 0,
-			"fontSize": 10
+			"fontSize": 9,
+			"transformType": "field"
 		},
 		"Size": {
-			"transformType": "field",
 			"rotation": 0,
 			"height": 20,
 			"left": 50,
 			"top": 0,
 			"font": "Arial",
 			"fontStyle": 0,
-			"fontSize": 10
+			"fontSize": 10,
+			"transformType": "field"
 		},
 		"Colour": {
-			"transformType": "field",
 			"rotation": 0,
 			"left": 100,
 			"top": 0,
 			"font": "Arial",
 			"fontStyle": 0,
-			"fontSize": 10
+			"fontSize": 10,
+			"transformType": "field"
 		},
 		"Price": {
-			"transformType": "field",
 			"label": "GBP",
 			"rotation": 0,
 			"left": 5,
 			"top": 10,
 			"font": "Arial",
 			"fontStyle": 0,
-			"fontSize": 10
+			"fontSize": 10,
+			"transformType": "field"
 		},
 		"Alt Price": {
-			"transformType": "field",
 			"rotation": 0,
 			"left": 75,
 			"top": 10,
 			"font": "Arial",
 			"fontStyle": 0,
-			"fontSize": 10
+			"fontSize": 10,
+			"transformType": "field"
 		},
 		"Barcode": {
-			"transformType": "barcode",
 			"rotation": 0,
 			"width": 100,
 			"height": 20,
@@ -78,20 +77,13 @@
 			"top": 22,
 			"font": "Arial",
 			"fontStyle": 0,
-			"fontSize": 10
-		},
-		"Image": {
-			"transformType": "image",
-			"imageUrl": "./testing/test.png",
-			"left": 5,
-			"top": 75,
-			"width": 64,
-			"height": 64
+			"fontSize": 10,
+			"transformType": "barcode"
 		}
 	},
 	"fk_user": "C2355B803935B746B34AA48CB91E327D",
 	"format": {
-		"printer": "8E4D1AF27B204347876720FF42943112",
+		"printer": "CEDD0D88C6C3934A87A726C7EA7B7E63",
 		"printType": "json",
 		"defaultFont": {
 			"font": "Arial",
@@ -99,7 +91,7 @@
 			"size": 10
 		}
 	},
-	"createdDate": "2021-07-08T18:22:53",
+	"createdDate": "2021-08-17T11:58:06",
 	"printJob_printFormat": {
 		"id": "16BD85B70DC93B4C801DCD38E884DCE3",
 		"fk_user": "C2355B803935B746B34AA48CB91E327D",
@@ -109,9 +101,9 @@
 			"page": {
 				"width": 140,
 				"height": 70,
-				"leftMargin": 0,
+				"leftMargin": 2,
 				"rightMargin": 0,
-				"topMargin": 0,
+				"topMargin": 2,
 				"bottomMargin": 0
 			},
 			"defaultFont": "Arial",
@@ -121,7 +113,7 @@
 				{
 					"name": "Style",
 					"formula": "variant_product.code",
-					"transformType": "field",
+					"type": "field",
 					"rotation": 0,
 					"top": 0,
 					"left": 5,
@@ -132,18 +124,18 @@
 				{
 					"name": "Article",
 					"formula": "variant_product.title",
-					"transformType": "field",
+					"type": "field",
 					"rotation": 0,
-					"top": 52,
+					"top": 55,
 					"left": 5,
 					"font": "Arial",
-					"fontSize": 10,
+					"fontSize": 9,
 					"fontStyle": 0
 				},
 				{
 					"name": "Size",
 					"formula": "size",
-					"transformType": "field",
+					"type": "field",
 					"rotation": 0,
 					"top": 0,
 					"left": 50,
@@ -155,7 +147,7 @@
 				{
 					"name": "Colour",
 					"formula": "colour",
-					"transformType": "field",
+					"type": "field",
 					"rotation": 0,
 					"top": 0,
 					"left": 100,
@@ -166,7 +158,7 @@
 				{
 					"name": "Price",
 					"formula": "",
-					"transformType": "price",
+					"type": "price",
 					"rotation": 0,
 					"top": 10,
 					"left": 5,
@@ -180,7 +172,7 @@
 				{
 					"name": "Alt Price",
 					"formula": "",
-					"transformType": "price",
+					"type": "price",
 					"rotation": 0,
 					"top": 10,
 					"left": 75,
@@ -193,7 +185,7 @@
 				{
 					"name": "Barcode",
 					"formula": "barcode",
-					"transformType": "barcode",
+					"type": "barcode",
 					"rotation": 0,
 					"top": 22,
 					"left": 5,
@@ -229,9 +221,9 @@
 		}
 	},
 	"printJob_printer": {
-		"id": "8E4D1AF27B204347876720FF42943112",
+		"id": "CEDD0D88C6C3934A87A726C7EA7B7E63",
 		"fk_user": "C2355B803935B746B34AA48CB91E327D",
-		"name": "GK420D",
+		"name": "ZD500-Sam-6",
 		"type": "label",
 		"public": true,
 		"detail": null
