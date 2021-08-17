@@ -11,14 +11,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SamGuard/I-Level-Print-Service.git"
+    "url": "git+https://github.com/SamGuard/Web-Print-Service.git"
   },
   "author": "Samuel Guard, Joseph Cryer",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/SamGuard/I-Level-Print-Service/issues"
+    "url": "https://github.com/SamGuard/Web-Print-Service/issues"
   },
-  "homepage": "https://github.com/SamGuard/I-Level-Print-Service#readme",
+  "homepage": "https://github.com/SamGuard/Web-Print-Service#readme",
   "dependencies": {
     "@thiagoelg/node-printer": "^0.5.5",
     "axios": "^0.21.1",

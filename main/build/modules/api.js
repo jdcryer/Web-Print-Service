@@ -1,6 +1,7 @@
 const axios = require("axios");
 const { build } = require("./label_constructor");
 const { sendPrint, addPrinterId, getPrinterById } = require("./printer");
+const fs = require("fs");
 
 class Api {
   constructor({ user, pass, printerIds }) {
@@ -157,6 +158,7 @@ class Api {
                   203,
                   "pixel"
                 );
+                fs.writeFileSync("output.txt", zpl);
 
                 try {
                   const printSuccess = await sendPrint(
