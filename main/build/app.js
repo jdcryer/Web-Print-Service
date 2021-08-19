@@ -20,7 +20,15 @@ let apiInstance = new api({
 apiInstance.startPrintJobListener();
 
 app.use(express.json());
-//app.use(express.static("public"));
+
+app.use(function (req, res, next) {
+  res.header("Access-Control-Allow-Origin", "http://localhost:3000");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept"
+  );
+  next();
+});
 
 app.get("/newPrinter", async (req, res) => {
   const newUser = await apiInstance.postNewPrinterAsync(
@@ -51,55 +59,8 @@ app.get("/newPrinter", async (req, res) => {
   }
 });
 
-app.post("/img", (req, res, next) => {
-  res.send(fs.readFileSync(__dirname + "/../assets/ZPL_tests/output.bmp"));
-});
-
 app.get("/printers", (req, res, next) => {
-  res.send(JSON.stringify(printer.getPrinters()));
-});
-
-app.post("/buildZPL", (req, res, next) => {
-  const data = JSON.parse(req.body.data);
-  const jobData = data.jobData;
-  const itemData = data.itemData;
-  res.send(JSON.stringify(labelConstructor.build(jobData, itemData)));
-});
-
-app.post("/testPrint", (req, res, next) => {
-  const printerName = req.body.name;
-  const data = req.body.data;
-
-  /* test data
-    printer.sendPrint("ZDesigner ZD500-203dpi ZPL", `
-    ^XA
-    ^FO200,50^A0R,200,150^FDDUMPTRUCK
-    ^FS
-    ^XZ`, null);
-    */
-
-  printer.sendPrint(printerName, data).then(
-    (data) => {
-      res.send(data);
-    },
-    (err) => {
-      res.send(err);
-    }
-  );
-});
-
-app.use("/", (req, res, next) => {
-  fs.readFile(
-    process.cwd() + "/assets/frontend/index.html",
-    "utf8",
-    function (err, data) {
-      if (err) {
-        res.send("<!DOCTYPE html><html>Error 500: File not found!</html>");
-        return;
-      }
-      res.send(data);
-    }
-  );
+  res.send(printer.getPrinters());
 });
 
 module.exports = app;

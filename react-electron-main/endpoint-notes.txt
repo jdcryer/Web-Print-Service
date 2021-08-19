@@ -1,0 +1,5 @@
+- set username & password - returns success/fail for auth
+
+- create new printer - returns success/fail
+- get printers
+- delete printer
