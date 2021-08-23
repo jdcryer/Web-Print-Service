@@ -40,6 +40,8 @@ class Api {
   deleteJobUrl = (jobId) =>
     `https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/print/printjob/${jobId}`;
 
+  deletePrinterUrl = (printerId) =>`https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/printer/${printerId}`;
+
   getItemsUrl = (jobId, page = 1) =>
     `https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/print/printitem?fk_printjob=${jobId}&fields=detail&page=${page}`;
 
@@ -79,6 +81,16 @@ class Api {
       if (res.Response === "OK") return { success: true };
       return { success: false };
     } catch (error) {
+      return { success: false, error: error };
+    }
+  }
+
+  async deletePrinterAsync(printerId){
+    try{
+      const res = await axios.delete(this.deletePrinterUrl(printerId));
+      if(res.Response === "OK") return { success: true };
+      return { success: false };
+    } catch(error) {
       return { success: false, error: error };
     }
   }

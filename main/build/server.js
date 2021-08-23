@@ -1,6 +1,6 @@
 //User credentials
 const fs = require("fs");
-const USER_PATH = process.cwd() + "/user-profile.json";
+
 
 /*
 try {
@@ -14,8 +14,7 @@ try {
   fs.writeFileSync(USER_PATH, JSON.stringify({ username: "", password: "" }));
 }
 */
-
-async function waitForCredentials() {
+/*
   let username, password;
   let [fileExists, badFile] = [false, true];
   while (true) {
@@ -49,6 +48,7 @@ async function waitForCredentials() {
       continue;
     }
   }
+  */
 
   //Application
   const http = require("http");
@@ -58,7 +58,5 @@ async function waitForCredentials() {
 
   server.listen(3001);
   console.log("listening on port 3001");
-}
 
-waitForCredentials();
 //
