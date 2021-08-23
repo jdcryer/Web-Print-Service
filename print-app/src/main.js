@@ -1,10 +1,11 @@
-const { app, BrowserWindow, ipcRenderer } = require("electron");
+const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
+const { service } = require("./serviceHandler");
 
-async function runCommand(cmd) {
-  const res = await ipcRenderer.sendSync("runCommand", cmd);
-  return res;
-}
+ipcMain.on("install", (event, arg) => {
+  service("install");
+  event.reply("install", "Installed!");
+});
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {

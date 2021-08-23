@@ -1,10 +1,10 @@
 import React from "react";
-const electron = window.require("electron");
-const remote = electron.remote;
-const { dialog } = remote;
-const { service } = require("../serviceHandler");
+const { ipcRenderer, remote } = window.require("electron");
 
 function MainPage() {
+  ipcRenderer.on("install", (event, arg) => {
+    console.log("Installed I guess??", arg);
+  });
   return (
     <div>
       <button
@@ -17,7 +17,7 @@ function MainPage() {
 
       <button
         onClick={() => {
-          service("install");
+          ipcRenderer.send("install", "");
         }}
       >
         Install Service

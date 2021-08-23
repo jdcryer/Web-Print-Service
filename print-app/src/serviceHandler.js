@@ -1,7 +1,6 @@
-const exec = require("child_process").exec;
-const SERVICE_WRAPPER_PATH =
-  process.cwd() + "/../Windows/x64/data/web-print-service.exe";
-
+const { exec } = require("child_process");
+const SERVICE_WRAPPER_PATH = __dirname + "/static/service/service-wrapper.exe";
+console.log(SERVICE_WRAPPER_PATH);
 const installServiceCommand = `${SERVICE_WRAPPER_PATH} Install`;
 const uninstallServiceCommand = `${SERVICE_WRAPPER_PATH} Uninstall`;
 const startServiceCommand = `${SERVICE_WRAPPER_PATH} Start`;
@@ -44,6 +43,5 @@ function service(
       throw new Error("Unknown command");
   }
 }
-
 
 module.exports.service = service;
