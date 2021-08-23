@@ -1,4 +1,4 @@
-import { Printers } from "./pages";
+import { Configuration } from "./pages";
 import { QueryClient, QueryClientProvider } from "react-query";
 
 const queryClient = new QueryClient();
@@ -9,7 +9,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       Hello
-      <Printers />
+      <Configuration />
     </QueryClientProvider>
   );
 }
