@@ -1,17 +1,15 @@
-import { Configuration } from "./pages";
+import React from "react";
+import { MainPage } from "./pages";
 import { QueryClient, QueryClientProvider } from "react-query";
 
 const queryClient = new QueryClient();
 
-const { app } = window.require("@electron/remote");
-
-function App() {
+function ReactRoot() {
   return (
     <QueryClientProvider client={queryClient}>
-      Hello
-      <Configuration />
+      <MainPage />
     </QueryClientProvider>
   );
 }
 
-export default App;
+export default ReactRoot;
