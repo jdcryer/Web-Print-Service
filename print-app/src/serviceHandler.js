@@ -1,10 +1,29 @@
 const { exec } = require("child_process");
-const SERVICE_WRAPPER_PATH = __dirname + "/static/service/service-wrapper.exe";
-console.log(SERVICE_WRAPPER_PATH);
-const installServiceCommand = `${SERVICE_WRAPPER_PATH} Install`;
-const uninstallServiceCommand = `${SERVICE_WRAPPER_PATH} Uninstall`;
-const startServiceCommand = `${SERVICE_WRAPPER_PATH} Start`;
-const stopServiceCommand = `${SERVICE_WRAPPER_PATH} Stop`;
+const SERVICE_WRAPPER_PATH = __dirname + "/static/service/";
+const SERVICE_WRAPPER_PATH_WIN = SERVICE_WRAPPER_PATH + `service-wrapper.exe`;
+const SERVICE_WRAPPER_PATH_MAC = SERVICE_WRAPPER_PATH + `service-mac.xml`
+const MAC_CONFIG_LOCATION = `~/Library/LaunchAgents/`;
+const SERVICE_NAME = "webprintservice";
+const isWin = process.platform === "win32";
+
+
+let installServiceCommand,
+  uninstallServiceCommand,
+  startServiceCommand,
+  stopServiceCommand;
+
+//Commands
+if (isWin) {
+  installServiceCommand = `${SERVICE_WRAPPER_PATH_WIN} Install`;
+  uninstallServiceCommand = `${SERVICE_WRAPPER_PATH_WIN} Uninstall`;
+  startServiceCommand = `${SERVICE_WRAPPER_PATH_WIN} Start`;
+  stopServiceCommand = `${SERVICE_WRAPPER_PATH_WIN} Stop`;
+} else {
+  installServiceCommand = undefined;
+  uninstallServiceCommand = undefined;
+  startServiceCommand = `sudo launchctl start`;
+  stopServiceCommand = `sudo launchctl stop`;
+}
 
 function execute(command, callback) {
   exec(command, (error, stdout, stderr) => {
