@@ -3,7 +3,7 @@ const fs = require("fs");
 const printer = require("./modules/printer");
 const api = require("./modules/api");
 const app = express();
-const USER_PATH = process.cwd() + "/user-profile.json";
+const USER_PATH = __dirname + "/../user-profile.json";
 //require("dotenv").config();
 
 const ids = printer
@@ -36,9 +36,13 @@ let apiInstance = new api({
     badFile = false;
     apiInstance.updateDetails(file.username, file.password);
 
-    fs.writeFile(USER_PATH, JSON.stringify({username: file.username, password: file.password}), (err) => {
-      if(err) throw err;
-    });
+    fs.writeFile(
+      USER_PATH,
+      JSON.stringify({ username: file.username, password: file.password }),
+      (err) => {
+        if (err) throw err;
+      }
+    );
     apiInstance.startPrintJobListener();
     console.log("Found login data");
   } catch (err) {
@@ -67,17 +71,30 @@ app.post("/setLogin", (req, res, next) => {
 
   badFile = false;
   apiInstance.updateDetails(username, password);
-  fs.writeFile(USER_PATH, JSON.stringify({username: username, password: password}), (err) => {
-    if(err) throw err;
-  });
+  fs.writeFile(
+    USER_PATH,
+    JSON.stringify({ username: username, password: password }),
+    (err) => {
+      if (err) throw err;
+    }
+  );
   apiInstance.startPrintJobListener();
   res.send({ success: true });
 });
 
 app.post("/checkLogin", (req, res, next) => {
-  apiInstance.getJobCountAsync().then(data => {
-    res.send({success: data.success, error: "Server could not be accessed using this login"});
-  }).catch((err) => {console.error(err)})
+  apiInstance
+    .getJobCountAsync()
+    .then((data) => {
+      if (data.error) {
+        res.send({ success: false, error: data.error.message });
+        return;
+      }
+      res.send({ success: true });
+    })
+    .catch((err) => {
+      console.error(err);
+    });
 });
 
 app.get("/newPrinter", async (req, res, next) => {
@@ -110,10 +127,14 @@ app.get("/newPrinter", async (req, res, next) => {
 });
 
 app.delete("/deletePrinter", (req, res, next) => {
-  apiInstance.deletePrinterAsync(req.body.printerId).then((data) => {
-    res.send(data);
-  }).catch((err) => {console.error(err)});
-
+  apiInstance
+    .deletePrinterAsync(req.body.printerId)
+    .then((data) => {
+      res.send(data);
+    })
+    .catch((err) => {
+      console.error(err);
+    });
 });
 
 app.get("/printers", (req, res, next) => {

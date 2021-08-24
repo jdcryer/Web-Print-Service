@@ -12,7 +12,7 @@ class Api {
     this.failures = 0;
   }
 
-  updateDetails({ user, pass, printerIds }) {
+  updateDetails(user, pass, printerIds) {
     this.user = user ?? this.user;
     this.pass = pass ?? this.pass;
     this.printerIds = printerIds ?? this.printerIds;
@@ -40,7 +40,8 @@ class Api {
   deleteJobUrl = (jobId) =>
     `https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/print/printjob/${jobId}`;
 
-  deletePrinterUrl = (printerId) =>`https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/printer/${printerId}`;
+  deletePrinterUrl = (printerId) =>
+    `https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/print/printer/${printerId}`;
 
   getItemsUrl = (jobId, page = 1) =>
     `https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/print/printitem?fk_printjob=${jobId}&fields=detail&page=${page}`;
@@ -78,19 +79,19 @@ class Api {
   async deleteJobAsync(jobId) {
     try {
       const res = await axios.delete(this.deleteJobUrl(jobId));
-      if (res.Response === "OK") return { success: true };
+      if (res.statusText === "OK") return { success: true };
       return { success: false };
     } catch (error) {
       return { success: false, error: error };
     }
   }
 
-  async deletePrinterAsync(printerId){
-    try{
+  async deletePrinterAsync(printerId) {
+    try {
       const res = await axios.delete(this.deletePrinterUrl(printerId));
-      if(res.Response === "OK") return { success: true };
-      return { success: false };
-    } catch(error) {
+      if (res.statusText === "OK") return { success: true };
+      return { success: false, error: res.Error };
+    } catch (error) {
       return { success: false, error: error };
     }
   }
@@ -141,7 +142,7 @@ class Api {
             if (!res.success) {
               this.failures++;
               if (this.failures > 10) {
-                console.error(res.error);
+                console.error(res.error.message);
                 this.failures = 0;
               }
               return;
@@ -192,7 +193,7 @@ class Api {
             // Would be a better way to handle multiple printers? So printing from one printer doesn't hold back printing from another.
             // Probably best to discuss this properly before final build.
           })
-          .catch((error) => console.error(error)),
+          .catch((error) => console.error(error.message)),
       1000
     );
   }
