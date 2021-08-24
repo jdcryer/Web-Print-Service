@@ -106,9 +106,9 @@ dist
 
 *.exe
 
-i-level-print-service-macos
+web-print-service-macos
+web-print-service-win.exe
 
-i-level-print-service/i-level-print-service-linux
 
 i-level-print-service/assets/ZPL_tests/output.png
 i-level-print-service/.vscode/launch.json
