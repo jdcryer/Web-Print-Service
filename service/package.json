@@ -1,7 +1,7 @@
 {
-  "name": "i-level-print-service",
+  "name": "web-print-service",
   "version": "1.0.0",
-  "description": "Print service application for i Level",
+  "description": "Print service application",
   "main": "./build/server.js",
   "bin": "./build/server.js",
   "private": true,
