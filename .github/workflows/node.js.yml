@@ -16,7 +16,7 @@ jobs:
     
     defaults:
       run:
-        working-directory: ./main
+        working-directory: ./service
 
     strategy:
       matrix:
