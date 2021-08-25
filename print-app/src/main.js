@@ -10,10 +10,9 @@ ipcMain.on("install", (event, arg) => {
 
 ipcMain.on("getLogs", (event, arg) => {
   getLogs(arg).then((data) => {
-    event.reply("getLogs", data);
+    event.reply("getLogs", {success: true, data: data});
   }).catch((err) => {
-    console.error(err);
-    event.reply("getLogs", "Could not get logs");
+    event.reply("getLogs", {success: false, error: err});
   })
 });
 
