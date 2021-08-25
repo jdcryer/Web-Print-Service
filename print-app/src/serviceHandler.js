@@ -1,6 +1,5 @@
 const { exec } = require("child_process");
-const { resolve } = require("path");
-const SERVICE_WRAPPER_PATH = __dirname + "/../static/service/";
+const SERVICE_WRAPPER_PATH = __dirname + "/static/service/";
 const SERVICE_WRAPPER_PATH_WIN = SERVICE_WRAPPER_PATH + `service-wrapper.exe`;
 const SERVICE_WRAPPER_PATH_MAC = SERVICE_WRAPPER_PATH + `service-mac.xml`;
 const MAC_CONFIG_LOCATION = `~/Library/LaunchAgents/`;
