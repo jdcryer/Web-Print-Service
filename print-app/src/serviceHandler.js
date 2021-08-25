@@ -1,10 +1,25 @@
 const { exec } = require("child_process");
-const SERVICE_WRAPPER_PATH = __dirname + "/static/service/";
-const SERVICE_WRAPPER_PATH_WIN = SERVICE_WRAPPER_PATH + `service-wrapper.exe`;
-const SERVICE_WRAPPER_PATH_MAC = SERVICE_WRAPPER_PATH + `service-mac.xml`;
-const MAC_CONFIG_LOCATION = `~/Library/LaunchAgents/`;
+const fs = require("fs");
+
+//System definitions
 const SERVICE_NAME = "webprintservice";
 const isWin = process.platform === "win32";
+
+//Paths
+const SERVICE_WRAPPER_PATH = __dirname + "/static/service/";
+
+//Windows
+const SERVICE_WRAPPER_PATH_WIN = SERVICE_WRAPPER_PATH + `service-wrapper.exe`;
+const SERVICE_WRAPPER_LOG_PATH = SERVICE_WRAPPER_PATH + `service-wrapper.wrapper.log`;
+const SERVICE_APP_LOG_PATH = SERVICE_WRAPPER_PATH + `service-wrapper.out.log`;
+const SERVICE_ERR_LOG_PATH = SERVICE_WRAPPER_PATH + `service-wrapper.err.log`;
+
+
+//Mac
+const SERVICE_WRAPPER_PATH_MAC = SERVICE_WRAPPER_PATH + `service-mac.xml`;
+const MAC_CONFIG_LOCATION = `~/Library/LaunchAgents/`;
+
+
 
 let installServiceCommand,
   uninstallServiceCommand,
@@ -42,7 +57,7 @@ function execute(command) {
 
 /**
  *
- * @param {install || uninstall || start || stop} command
+ * @param {String} command Can be either install, uninstall, start, stop
  * @returns {Promise}
  */
 function service(command) {
@@ -82,4 +97,24 @@ function service(command) {
   });
 }
 
+
+/**
+ * @param {String} from Can be either application, wrapper or error
+ * @return {Promise}
+ */
+function getLogs(from){
+  const path = new Map();
+  path.set("application", SERVICE_APP_LOG_PATH);
+  path.set("wrapper", SERVICE_WRAPPER_LOG_PATH);
+  path.set("error", SERVICE_ERR_LOG_PATH);
+  
+  return new Promise((resolve, reject) => {
+    fs.readFile(path.get(from), `utf8`, (err, data) => {
+      if(err) reject(err);
+      else resolve(data);    
+    })
+  });
+}
+
 module.exports.service = service;
+module.exports.getLogs = getLogs;

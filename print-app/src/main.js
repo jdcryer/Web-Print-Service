@@ -1,11 +1,20 @@
 const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
-const { service } = require("./serviceHandler");
+const { service, getLogs } = require("./serviceHandler");
 
 ipcMain.on("install", (event, arg) => {
   service("install").then((data) => {
     event.reply("install", data);
   });
+});
+
+ipcMain.on("getLogs", (event, arg) => {
+  getLogs(arg).then((data) => {
+    event.reply("getLogs", data);
+  }).catch((err) => {
+    console.error(err);
+    event.reply("getLogs", "Could not get logs");
+  })
 });
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.

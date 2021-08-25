@@ -22,6 +22,17 @@ function MainPage() {
       >
         Install Service
       </button>
+
+      <button
+        onClick={() => {
+          ipcRenderer.send("getLogs", "wrapper");
+          ipcRenderer.on("getLogs", (event, arg) => {
+            console.log(arg);
+          })
+        }}
+      >
+        getLogs
+      </button>
     </div>
   );
 }
