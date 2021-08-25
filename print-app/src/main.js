@@ -3,8 +3,9 @@ const path = require("path");
 const { service } = require("./serviceHandler");
 
 ipcMain.on("install", (event, arg) => {
-  service("install");
-  event.reply("install", "Installed!");
+  service("install").then((data) => {
+    event.reply("install", data);
+  });
 });
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
