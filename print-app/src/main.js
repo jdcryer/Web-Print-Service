@@ -8,12 +8,38 @@ ipcMain.on("install", (event, arg) => {
   });
 });
 
+ipcMain.on("uninstall", (event, arg) => {
+  service("uninstall").then((data) => {
+    event.reply("uninstall", data);
+  });
+});
+
+ipcMain.on("start", (event, arg) => {
+  service("start").then((data) => {
+    event.reply("start", data);
+  });
+});
+
+ipcMain.on("stop", (event, arg) => {
+  service("stop").then((data) => {
+    event.reply("stop", data);
+  });
+});
+
+ipcMain.on("status", (event, arg) => {
+  service("status").then((data) => {
+    event.reply("status", data);
+  });
+});
+
 ipcMain.on("getLogs", (event, arg) => {
-  getLogs(arg).then((data) => {
-    event.reply("getLogs", {success: true, data: data});
-  }).catch((err) => {
-    event.reply("getLogs", {success: false, error: err});
-  })
+  getLogs(arg)
+    .then((data) => {
+      event.reply("getLogs", { success: true, data: data });
+    })
+    .catch((err) => {
+      event.reply("getLogs", { success: false, error: err });
+    });
 });
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.

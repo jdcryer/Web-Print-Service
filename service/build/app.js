@@ -53,6 +53,7 @@ let apiInstance = new api({
 
 app.use(express.json());
 
+/*
 app.use(function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "http://localhost:3000");
   res.header(
@@ -61,8 +62,8 @@ app.use(function (req, res, next) {
   );
   next();
 });
-
-app.post("/setLogin", (req, res, next) => {
+*/
+app.post("/postLogin", (req, res, next) => {
   const username = req.body.username;
   const password = req.body.password;
 
@@ -82,7 +83,7 @@ app.post("/setLogin", (req, res, next) => {
   res.send({ success: true });
 });
 
-app.post("/checkLogin", (req, res, next) => {
+app.get("/getLogin", (req, res, next) => {
   apiInstance
     .getJobCountAsync()
     .then((data) => {
@@ -97,7 +98,7 @@ app.post("/checkLogin", (req, res, next) => {
     });
 });
 
-app.get("/newPrinter", async (req, res, next) => {
+app.post("/postNewPrinter", async (req, res, next) => {
   const newUser = await apiInstance.postNewPrinterAsync(
     req.query.userId,
     req.query.printerName,
@@ -117,8 +118,6 @@ app.get("/newPrinter", async (req, res, next) => {
     console.log(ids);
 
     apiInstance.updateDetails({
-      user: process.env.USER,
-      pass: process.env.PASS,
       printerIds: ids,
     });
   } else {

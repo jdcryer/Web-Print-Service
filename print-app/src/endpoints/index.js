@@ -1,1 +1,3 @@
-export { default as useQueryGetPrinters } from "./api";
+export { useQueryGetPrinters } from "./api";
+export { useQueryGetLogin } from "./api";
+export { useQueryPostLogin } from "./api";
