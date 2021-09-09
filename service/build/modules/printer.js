@@ -1,6 +1,7 @@
 const printer = require("@thiagoelg/node-printer");
 const fs = require("fs");
 const PRINT_CONFIG_PATH = process.cwd() + "/printer-config.json";
+const EDITABLE_ATTRIBUTES = ["displayName", "acceptedTypes", "enabled"];
 
 //Stores data loaded from file
 //Gets updating by the getPrinters and updateConfig functions
@@ -14,6 +15,12 @@ try {
 
 function getPrinterConfig(name) {
   return config.find((x) => x.name == name);
+}
+
+function getPrinterById(id) {
+  // Given a printer name and ID, return that printer name
+  const pd = getPrinters();
+  return pd.find((x) => x.id === id)?.name;
 }
 
 function saveConfig() {
@@ -35,10 +42,14 @@ function addPrinterId(name, id) {
   return true;
 }
 
-function getPrinterById(id) {
-  // Given a printer name and ID, return that printer name
-  const pd = getPrinters();
-  return pd.find((x) => x.id === id)?.name;
+function editPrinter(name, data){
+  const p = getPrinterConfig(name);
+
+  Object.keys(data).forEach((key) => {
+    if(EDITABLE_ATTRIBUTES.find(x => x === key) === undefined) throw `Cannot change attribute ${key}.`;
+    p[key] = data[key];
+  })
+  updateConfig();
 }
 
 //Gets all the printers and matches them to their config in printer-config.json
@@ -75,11 +86,7 @@ function updateConfig() {
     return Object.assign(p, con);
   });
 
-  if (changedConfig) {
-    saveConfig();
-    console.log("Saved config");
-  }
-
+  saveConfig();
   return config;
 }
 
@@ -120,3 +127,4 @@ module.exports.getPrinters = getPrinters;
 module.exports.sendPrint = sendPrint;
 module.exports.addPrinterId = addPrinterId;
 module.exports.getPrinterById = getPrinterById;
+module.exports.editPrinter = editPrinter;

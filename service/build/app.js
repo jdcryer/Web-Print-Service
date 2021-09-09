@@ -141,4 +141,11 @@ app.get("/printers", (req, res, next) => {
   res.send(printer.getPrinters());
 });
 
+app.post("/editPrinter", (req, res, next) => {
+  const printerName = req.body.printerName;
+  const data = req.body.data;
+  printer.editPrinter(printerName, data);
+  res.send({ success: true });
+});
+
 module.exports = app;
