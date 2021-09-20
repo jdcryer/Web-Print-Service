@@ -1,7 +1,11 @@
 import React from "react";
 const { ipcRenderer, remote } = window.require("electron");
+import { useQueryCheckLogin } from "../endpoints";
 
 function MainPage() {
+  const { data: d } = useQueryCheckLogin();
+  console.log(d);
+
   ipcRenderer.on("install", (event, arg) => {
     console.log("Installed I guess??", arg);
   });
@@ -28,7 +32,7 @@ function MainPage() {
           ipcRenderer.send("getLogs", "wrapper");
           ipcRenderer.on("getLogs", (event, arg) => {
             console.log(arg);
-          })
+          });
         }}
       >
         getLogs
