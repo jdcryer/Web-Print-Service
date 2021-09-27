@@ -1,6 +1,12 @@
 const axios = require("axios");
 const { build } = require("./label_constructor");
-const { sendPrint, addPrinterId, getPrinterById } = require("./printer");
+const {
+  sendPrint,
+  addPrinter,
+  getPrinterById,
+  removePrinter,
+  editPrinter,
+} = require("./printer");
 const fs = require("fs");
 
 class Api {
@@ -8,11 +14,11 @@ class Api {
     this.user = user;
     this.pass = pass;
     this.printerIds = printerIds;
-    this.running = true;
+    this.running = false;
     this.failures = 0;
   }
 
-  updateDetails(user, pass, printerIds) {
+  updateDetails({ user, pass, printerIds }) {
     this.user = user ?? this.user;
     this.pass = pass ?? this.pass;
     this.printerIds = printerIds ?? this.printerIds;
@@ -31,6 +37,9 @@ class Api {
     },
   });
 
+  getUserIdUrl = () =>
+    `https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/print/currentUser`;
+
   getJobCountUrl = () =>
     `https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/print/printjob/query/count`;
 
@@ -48,6 +57,17 @@ class Api {
 
   postNewPrinterUrl = () =>
     `https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/print/printer`;
+
+  async getUserIdAsync() {
+    try {
+      const res = await axios.get(this.getUserIdUrl(), {
+        headers: { cookie: "print" },
+      });
+      return { success: true, data: res.data };
+    } catch (error) {
+      return { success: false, error: error };
+    }
+  }
 
   async getJobCountAsync() {
     try {
@@ -69,7 +89,7 @@ class Api {
         type: type,
         public: isPublic,
       });
-      addPrinterId(printerName, res.data.id);
+      addPrinter(printerName, res.data.id, displayName);
       return { success: true, data: res.data };
     } catch (error) {
       return { success: false, error: error };
@@ -89,7 +109,11 @@ class Api {
   async deletePrinterAsync(printerId) {
     try {
       const res = await axios.delete(this.deletePrinterUrl(printerId));
-      if (res.statusText === "OK") return { success: true };
+      if (res.statusText === "OK") {
+        removePrinter(printerId);
+
+        return { success: true };
+      }
       return { success: false, error: res.Error };
     } catch (error) {
       return { success: false, error: error };
@@ -135,6 +159,8 @@ class Api {
   }
 
   startPrintJobListener() {
+    if (this.running) return;
+    this.running = true;
     this.pollLoop(
       () =>
         this.getJobCountAsync()

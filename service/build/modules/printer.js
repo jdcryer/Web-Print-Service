@@ -27,7 +27,7 @@ function saveConfig() {
   fs.writeFileSync(PRINT_CONFIG_PATH, JSON.stringify(config));
 }
 
-function addPrinterId(name, id) {
+function addPrinter(name, id, displayName) {
   // Given a printer name and ID, put that printer ID on that printer object
   updateConfig(); //Printer data
 
@@ -36,19 +36,36 @@ function addPrinterId(name, id) {
     console.error(`Could not match printer name "${name}" to a printer`);
     return false;
   }
+  config[index].displayName = displayName;
   config[index].id = id;
   config[index].enabled = true;
   saveConfig();
   return true;
 }
 
-function editPrinter(name, data){
+function removePrinter(id) {
+  // Given a printer name and ID, put that printer ID on that printer object
+  updateConfig(); //Printer data
+
+  const index = config.findIndex((x) => x.id === id);
+  if (index === -1) {
+    console.error(`Could not match printer id "${id}" to a printer`);
+    return false;
+  }
+  config[index].id = undefined;
+  config[index].enabled = false;
+  saveConfig();
+  return true;
+}
+
+function editPrinter(name, data) {
   const p = getPrinterConfig(name);
 
   Object.keys(data).forEach((key) => {
-    if(EDITABLE_ATTRIBUTES.find(x => x === key) === undefined) throw `Cannot change attribute ${key}.`;
+    if (EDITABLE_ATTRIBUTES.find((x) => x === key) === undefined)
+      throw `Cannot change attribute ${key}.`;
     p[key] = data[key];
-  })
+  });
   updateConfig();
 }
 
@@ -70,20 +87,20 @@ function updateConfig() {
     const con = getPrinterConfig(el.name);
     //If does not exist yet create new file
     if (con == undefined) {
-      const output = Object.assign(
-        {
-          name: el.name,
-          enabled: false,
-          displayName: el.name,
-          acceptedTypes: [],
-        },
-        p
-      );
       changedConfig = true;
-      return Object.assign(p, output);
+      return {
+        ...p,
+        enabled: false,
+        displayName: el.name,
+        acceptedTypes: [],
+      };
     }
 
-    return Object.assign(p, con);
+    return {
+      ...con,
+      ...p,
+    };
+    //return Object.assign(con, p);
   });
 
   saveConfig();
@@ -125,6 +142,7 @@ updateConfig();
 
 module.exports.getPrinters = getPrinters;
 module.exports.sendPrint = sendPrint;
-module.exports.addPrinterId = addPrinterId;
+module.exports.addPrinter = addPrinter;
 module.exports.getPrinterById = getPrinterById;
 module.exports.editPrinter = editPrinter;
+module.exports.removePrinter = removePrinter;

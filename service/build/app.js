@@ -3,7 +3,7 @@ const fs = require("fs");
 const printer = require("./modules/printer");
 const api = require("./modules/api");
 const app = express();
-const USER_PATH = __dirname + "/../user-profile.json";
+const USER_PATH = process.cwd() + "/user-profile.json";
 //require("dotenv").config();
 
 const ids = printer
@@ -34,7 +34,10 @@ let apiInstance = new api({
     process.env.PASS = file.password;
 
     badFile = false;
-    apiInstance.updateDetails(file.username, file.password);
+    apiInstance.updateDetails({
+      user: file.username,
+      pass: file.password,
+    });
 
     fs.writeFile(
       USER_PATH,
@@ -59,10 +62,11 @@ app.use(function (req, res, next) {
     "Access-Control-Allow-Headers",
     "Origin, X-Requested-With, Content-Type, Accept"
   );
+  res.header("Access-Control-Allow-Methods", "GET, POST, DELETE");
   next();
 });
 
-app.post("/setLogin", (req, res, next) => {
+app.post("/postLogin", (req, res, next) => {
   const username = req.body.username;
   const password = req.body.password;
 
@@ -70,55 +74,52 @@ app.post("/setLogin", (req, res, next) => {
   process.env.PASS = password;
 
   badFile = false;
-  apiInstance.updateDetails(username, password);
+  apiInstance.updateDetails({ user: username, pass: password });
   fs.writeFile(
     USER_PATH,
     JSON.stringify({ username: username, password: password }),
     (err) => {
-      if (err) throw err;
+      if (err) {
+        res.send({ success: false, message: err.message });
+        throw err;
+      }
+      apiInstance.startPrintJobListener();
+      res.send({ success: true });
     }
   );
-  apiInstance.startPrintJobListener();
-  res.send({ success: true });
 });
 
-app.post("/checkLogin", (req, res, next) => {
+app.get("/checkLogin", (req, res, next) => {
   apiInstance
-    .getJobCountAsync()
+    .getUserIdAsync()
     .then((data) => {
       if (data.error) {
         res.send({ success: false, error: data.error.message });
         return;
       }
-      res.send({ success: true });
+      res.send({ success: true, data: data.data.id });
     })
     .catch((err) => {
       console.error(err);
     });
 });
 
-app.get("/newPrinter", async (req, res, next) => {
+app.post("/newPrinter", async (req, res, next) => {
   const newUser = await apiInstance.postNewPrinterAsync(
-    req.query.userId,
-    req.query.printerName,
-    req.query.displayName,
-    req.query.type,
+    req.body.userId,
+    req.body.printerName,
+    req.body.displayName,
+    req.body.type,
     true
   );
   if (newUser.success) {
-    console.log(newUser.data);
-    res.send(
-      `Success!  New printer ID: ${newUser.data.id}.  Printer ID has been added to config.`
-    );
+    res.send(newUser);
     let ids = printer
       .getPrinters()
       .filter((x) => x.id !== undefined)
       .map((x) => x.id);
-    console.log(ids);
 
     apiInstance.updateDetails({
-      user: process.env.USER,
-      pass: process.env.PASS,
       printerIds: ids,
     });
   } else {
@@ -130,6 +131,14 @@ app.delete("/deletePrinter", (req, res, next) => {
   apiInstance
     .deletePrinterAsync(req.body.printerId)
     .then((data) => {
+      let ids = printer
+        .getPrinters()
+        .filter((x) => x.id !== undefined)
+        .map((x) => x.id);
+
+      apiInstance.updateDetails({
+        printerIds: ids,
+      });
       res.send(data);
     })
     .catch((err) => {

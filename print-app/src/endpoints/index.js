@@ -1,1 +1,7 @@
-export { useQueryGetPrinters, useQueryCheckLogin } from "./api";
+export {
+  useQueryGetPrinters,
+  useQueryCheckLogin,
+  useQueryPostLogin,
+  useQueryPostPrinter,
+  useQueryDeletePrinter,
+} from "./api";

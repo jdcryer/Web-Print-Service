@@ -9,9 +9,4 @@ import ReactRoot from "./ReactRoot";
 
 // render();
 
-ReactDOM.render(
-  <React.StrictMode>
-    <ReactRoot />
-  </React.StrictMode>,
-  document.getElementById("root")
-);
+ReactDOM.render(<ReactRoot />, document.getElementById("root"));

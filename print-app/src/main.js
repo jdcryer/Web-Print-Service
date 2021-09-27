@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require("electron");
+const { app, BrowserWindow, ipcMain, session } = require("electron");
 const path = require("path");
 const { service, getLogs } = require("./serviceHandler");
 
@@ -8,12 +8,38 @@ ipcMain.on("install", (event, arg) => {
   });
 });
 
+ipcMain.on("uninstall", (event, arg) => {
+  service("uninstall").then((data) => {
+    event.reply("uninstall", data);
+  });
+});
+
+ipcMain.on("start", (event, arg) => {
+  service("start").then((data) => {
+    event.reply("start", data);
+  });
+});
+
+ipcMain.on("stop", (event, arg) => {
+  service("stop").then((data) => {
+    event.reply("stop", data);
+  });
+});
+
+ipcMain.on("status", (event, arg) => {
+  service("status").then((data) => {
+    event.reply("status", data);
+  });
+});
+
 ipcMain.on("getLogs", (event, arg) => {
-  getLogs(arg).then((data) => {
-    event.reply("getLogs", {success: true, data: data});
-  }).catch((err) => {
-    event.reply("getLogs", {success: false, error: err});
-  })
+  getLogs(arg)
+    .then((data) => {
+      event.reply("getLogs", { success: true, data: data });
+    })
+    .catch((err) => {
+      event.reply("getLogs", { success: false, error: err });
+    });
 });
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -31,6 +57,7 @@ const createWindow = () => {
       nodeIntegration: true,
       enableRemoteModule: true,
       contextIsolation: false,
+      allowRunningInsecureContent: true,
     },
   });
   // and load the index.html of the app.
@@ -43,7 +70,9 @@ const createWindow = () => {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.on("ready", createWindow);
+app.on("ready", () => {
+  createWindow();
+});
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
