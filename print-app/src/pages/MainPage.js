@@ -1,10 +1,28 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 const { ipcRenderer, remote } = window.require("electron");
 import { useQueryPostLogin, useQueryCheckLogin } from "../endpoints";
 import { useMutation, useQueryClient } from "react-query";
 import { PrinterPanel, NewPrinter, Login } from "../containers";
 
 function MainPage() {
+  const [log, setLog] = useState({});
+  const [status, setStatus] = useState({});
+
+  const [newPrinterOpen, setNewPrinterOpen] = useState(false);
+
+  useEffect(() => {
+    ipcRenderer.on("getLogs", (event, arg) => {
+      setLog(arg);
+      console.log("getLogs:", arg);
+    });
+    ipcRenderer.on("status", (event, arg) => {
+      setStatus(arg);
+      console.log("Status:", arg);
+    });
+
+    ipcRenderer.send("status", "");
+  }, []);
+
   useEffect(() => {
     ipcRenderer.on("install", (event, arg) => {
       console.log("Install:", arg);
@@ -21,17 +39,15 @@ function MainPage() {
     ipcRenderer.on("stop", (event, arg) => {
       console.log("Stop:", arg);
     });
-
-    ipcRenderer.on("status", (event, arg) => {
-      console.log("Status:", arg);
-    });
-
-    ipcRenderer.on("getLogs", (event, arg) => {
-      console.log("getLogs:", arg);
-    });
   }, []);
+
   return (
     <div>
+      {log?.success ? log?.data : log?.error?.message}
+      <br />
+      {status?.success ? status?.stdout : "Fail"}
+      <br />
+
       <button
         onClick={() => {
           dialog.showErrorBox("Error Box", "Fatal Error");
@@ -82,9 +98,7 @@ function MainPage() {
 
       <button
         onClick={() => {
-          ipcRenderer.on("getLogs", (event, arg) => {
-            console.log(arg);
-          });
+          ipcRenderer.send("getLogs", "wrapper");
         }}
       >
         Get wrapper logs
@@ -108,7 +122,7 @@ function MainPage() {
 
       <PrinterPanel />
 
-      <NewPrinter />
+      <NewPrinter open={newPrinterOpen} setOpen={setNewPrinterOpen} />
       <Login />
     </div>
   );

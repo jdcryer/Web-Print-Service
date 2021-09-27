@@ -2,7 +2,7 @@ import React from "react";
 import { IconButton } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 import { Print, Cancel, CheckCircle, MoreHoriz } from "@material-ui/icons";
-import { Text } from "../ui-library";
+import { Text } from ".";
 
 const useStyles = makeStyles({
   root: {
