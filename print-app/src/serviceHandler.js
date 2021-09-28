@@ -19,6 +19,12 @@ const SERVICE_ERR_LOG_PATH = SERVICE_WRAPPER_PATH + `service-wrapper.err.log`;
 const SERVICE_WRAPPER_PATH_MAC = SERVICE_WRAPPER_PATH + `service-mac.xml`;
 const MAC_CONFIG_LOCATION = `~/Library/LaunchAgents/`;
 
+const STATUS_RUNNING = "running";
+const STATUS_STOPPED = "stopped";
+const STATUS_NOT_INSTALLED = "not_installed";
+
+let state = "idle";
+
 let installServiceCommand,
   uninstallServiceCommand,
   startServiceCommand,
@@ -40,6 +46,20 @@ if (isWin) {
   getStatCommand = undefined;
 }
 
+function formatStatus(s) {
+  s = s.toLowerCase();
+  if (s.includes("started")) {
+    return STATUS_RUNNING;
+  }
+  if (s.includes("stopped")) {
+    return STATUS_STOPPED;
+  }
+  if (s.includes("nonexistent")) {
+    return STATUS_NOT_INSTALLED;
+  }
+  return s;
+}
+
 /**
  *
  * @param {String} command
@@ -55,11 +75,12 @@ function execute(command) {
 
 /**
  *
- * @param {String} command Can be either install, uninstall, start, stop
+ * @param {String} command Can be either install, uninstall, start, stop or status
  * @returns {Promise}
  */
 function service(command) {
   let prom;
+  let postProcess = (out) => out;
   console.log(command);
   switch (command) {
     case "install":
@@ -71,7 +92,7 @@ function service(command) {
           resolve(execute(uninstallServiceCommand))
         );
       });
-
+      break;
     case "start":
       prom = execute(startServiceCommand);
       break;
@@ -79,6 +100,7 @@ function service(command) {
       prom = execute(stopServiceCommand);
       break;
     case "status":
+      postProcess = formatStatus;
       prom = execute(getStatCommand);
       break;
     default:
@@ -88,10 +110,57 @@ function service(command) {
   return new Promise((resolve, reject) => {
     prom.then(({ error, stdout, stderr }) => {
       if (error) {
-        resolve({ success: false, error: error, dir: SERVICE_WRAPPER_PATH });
+        resolve({ success: false, error: stdout, dir: SERVICE_WRAPPER_PATH });
         return;
       }
-      resolve({ success: true, stdout: stdout });
+      resolve({ success: true, data: postProcess(stdout) });
+    });
+  });
+}
+
+function init(failedAttempts, attempts) {
+  if(failedAttempts > 5 || attempts > 20){
+    throw new Error("Too many failed attempts");
+  }
+
+  return new Promise((resolve, reject) => {
+    state = "Initialising";
+    //Check current status
+    service("status").then((res) => {
+      //If somehow this fails give up on installing/starting as theres something majorly wrong
+      if (res.success == false) {
+        reject(new Error("Cannot access services"));
+        return;
+      } else {
+        //Check to see if installed
+        if (res.data === STATUS_NOT_INSTALLED) {
+          //Install service
+          state = "Installing";
+          service("install").then((data) => {
+            if (data.success == true) {
+              state = "Installed";
+              init();
+            } else {
+              reject(data);
+            }
+          });
+        } else if (res.data === STATUS_STOPPED) {
+          state = "starting";
+          service("start").then((data) => {
+            if (data.success == true) {
+              state = "Running";
+              resolve({ success: true });
+            } else {
+              reject(data);
+            }
+          });
+        } else if (res.data === STATUS_RUNNING) {
+          state = "running";
+          resolve({ success: true });
+        } else{
+          resolve({success: false, error: `Do not recognise ${res.data}`});
+        }
+      }
     });
   });
 }
@@ -114,5 +183,11 @@ function getLogs(from) {
   });
 }
 
+
 module.exports.service = service;
 module.exports.getLogs = getLogs;
+module.exports.getState = () => {
+  return state;
+};
+
+module.exports.init = init;

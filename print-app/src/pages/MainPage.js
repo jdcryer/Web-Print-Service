@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 const { ipcRenderer, remote } = window.require("electron");
 import { useQueryPostLogin, useQueryCheckLogin } from "../endpoints";
 import { useMutation, useQueryClient } from "react-query";
-import { PrinterPanel, NewPrinter, Login } from "../containers";
+import { PrinterPanel, NewPrinter, Login, ServicePanel } from "../containers";
 
 function MainPage() {
   const [log, setLog] = useState({});
@@ -45,7 +45,7 @@ function MainPage() {
     <div>
       {log?.success ? log?.data : log?.error?.message}
       <br />
-      {status?.success ? status?.stdout : "Fail"}
+      {status?.success ? status?.data : "Fail"}
       <br />
 
       <button
@@ -122,6 +122,7 @@ function MainPage() {
 
       <PrinterPanel />
 
+      <ServicePanel />
       <NewPrinter open={newPrinterOpen} setOpen={setNewPrinterOpen} />
       <Login />
     </div>
