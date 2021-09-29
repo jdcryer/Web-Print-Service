@@ -10,6 +10,8 @@ function MainPage() {
 
   const [newPrinterOpen, setNewPrinterOpen] = useState(false);
 
+  const [loginOpen, setLoginOpen] = useState(false);
+
   useEffect(() => {
     ipcRenderer.on("getLogs", (event, arg) => {
       setLog(arg);
@@ -124,7 +126,7 @@ function MainPage() {
 
       <ServicePanel />
       <NewPrinter open={newPrinterOpen} setOpen={setNewPrinterOpen} />
-      <Login />
+      <Login open={loginOpen} setOpen={setLoginOpen} forced={false} />
     </div>
   );
 }

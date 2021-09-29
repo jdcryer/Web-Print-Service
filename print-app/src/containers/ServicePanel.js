@@ -26,13 +26,15 @@ function ServicePanel() {
   const [handlerState, setHandlerState] = useState("Unkown");
 
   useEffect(() => {
-    let serviceListener = ipcRenderer.on("serviceHandlerState", (event, arg) => setHandlerState(arg));
+    let serviceListener = ipcRenderer.on("serviceHandlerState", (event, arg) =>
+      setHandlerState(arg)
+    );
 
     ipcRenderer.send("startServiceHandlerUpdate");
 
-    return () =>{
+    return () => {
       ipcRenderer.removeListener("serviceHandlerState", serviceListener);
-    }
+    };
   }, []);
 
   const classes = useStyles();

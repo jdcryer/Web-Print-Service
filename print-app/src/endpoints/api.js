@@ -15,13 +15,17 @@ export function useQueryCheckLogin() {
   );
 }
 
-export async function useQueryPostLogin(username, password) {
+export async function useQueryPostLogin(username, password, baseUrl) {
   return fetch("http://localhost:3001/postLogin", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ username: username, password: password }),
+    body: JSON.stringify({
+      username: username,
+      password: password,
+      baseUrl: baseUrl,
+    }),
   }).then((res) => res.json());
 }
 

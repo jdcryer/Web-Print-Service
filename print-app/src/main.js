@@ -1,7 +1,9 @@
+console.log("HEllo!");
+console.log(process.argv);
+
 const { app, BrowserWindow, ipcMain, session } = require("electron");
 const path = require("path");
 const { service, getLogs, getState, init } = require("./serviceHandler");
-
 
 serviceHandlerUpdateInt = undefined;
 
@@ -40,20 +42,20 @@ ipcMain.on("startServiceHandlerUpdate", (event, arg) => {
     event.reply("serviceHandlerState", getState());
   }, 200);
 
-  init(0, 0).then((data) => {
-    console.log(data);
-  }).catch((err) => {
-    throw new Error("Fatal error in service handling: " + err);
-  })
-})
+  init(0, 0)
+    .then((data) => {
+      console.log(data);
+    })
+    .catch((err) => {
+      throw new Error("Fatal error in service handling: " + err);
+    });
+});
 
-ipcMain.on("stopServiceHandlerState", (event, arg) =>{
-  if(serviceHandlerUpdateInt){
+ipcMain.on("stopServiceHandlerState", (event, arg) => {
+  if (serviceHandlerUpdateInt) {
     clearInterval(serviceHandlerUpdateInt);
   }
-})
-
-
+});
 
 ipcMain.on("getLogs", (event, arg) => {
   getLogs(arg)

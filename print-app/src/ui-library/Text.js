@@ -14,15 +14,19 @@ const useStyles = makeStyles({
   large: {
     fontSize: 20,
   },
+  red: {
+    color: "red",
+  },
 });
 
-function Text({ children, bold, large, ...rest }) {
+function Text({ children, bold, large, error, ...rest }) {
   const classes = useStyles();
   return (
     <div
       className={clsx(classes.root, {
-        [classes.bold]: bold,
+        [classes.bold]: bold || error,
         [classes.large]: large,
+        [classes.red]: error,
       })}
       {...rest}
     >

@@ -10,17 +10,19 @@ const {
 const fs = require("fs");
 
 class Api {
-  constructor({ user, pass, printerIds }) {
+  constructor({ user, pass, baseUrl, printerIds }) {
     this.user = user;
     this.pass = pass;
+    this.baseUrl = baseUrl;
     this.printerIds = printerIds;
     this.running = false;
     this.failures = 0;
   }
 
-  updateDetails({ user, pass, printerIds }) {
+  updateDetails({ user, pass, baseUrl, printerIds }) {
     this.user = user ?? this.user;
     this.pass = pass ?? this.pass;
+    this.baseUrl = baseUrl ?? this.baseUrl;
     this.printerIds = printerIds ?? this.printerIds;
     this.failures = 0;
   }
@@ -38,32 +40,33 @@ class Api {
   });
 
   getUserIdUrl = () =>
-    `https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/print/currentUser`;
+    `https://${this.user}:${this.pass}@${this.baseUrl}/print/currentUser`;
 
   getJobCountUrl = () =>
-    `https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/print/printjob/query/count`;
+    `https://${this.user}:${this.pass}@${this.baseUrl}/print/printjob/query/count`;
 
   getJobUrl = (page = 1) =>
-    `https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/print/printjob/query?fields=id,page,properties,format,createdDate,fk_printer&page=${page}`;
+    `https://${this.user}:${this.pass}@${this.baseUrl}/print/printjob/query?fields=id,page,properties,format,createdDate,fk_printer&page=${page}`;
 
   deleteJobUrl = (jobId) =>
-    `https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/print/printjob/${jobId}`;
+    `https://${this.user}:${this.pass}@${this.baseUrl}/print/printjob/${jobId}`;
 
   deletePrinterUrl = (printerId) =>
-    `https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/print/printer/${printerId}`;
+    `https://${this.user}:${this.pass}@${this.baseUrl}/print/printer/${printerId}`;
 
   getItemsUrl = (jobId, page = 1) =>
-    `https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/print/printitem?fk_printjob=${jobId}&fields=detail&page=${page}`;
+    `https://${this.user}:${this.pass}@${this.baseUrl}/print/printitem?fk_printjob=${jobId}&fields=detail&page=${page}`;
 
   postNewPrinterUrl = () =>
-    `https://${this.user}:${this.pass}@dev.ilevelconnect.co.uk/print/printer`;
+    `https://${this.user}:${this.pass}@${this.baseUrl}/print/printer`;
 
   async getUserIdAsync() {
     try {
       const res = await axios.get(this.getUserIdUrl(), {
         headers: { cookie: "print" },
       });
-      return { success: true, data: res.data };
+      if (res.data.id === undefined) throw "Failed to connect.";
+      return { success: true, data: res.data.id };
     } catch (error) {
       return { success: false, error: error };
     }
@@ -75,6 +78,7 @@ class Api {
         this.getJobCountUrl(),
         this.buildPrinterIdQuery()
       );
+      if (res.data.count === undefined) throw "Failed to connect";
       return { success: true, data: res.data.count };
     } catch (error) {
       return { success: false, error: error };

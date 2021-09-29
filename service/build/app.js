@@ -12,8 +12,6 @@ const ids = printer
   .map((x) => x.id);
 console.log(ids);
 let apiInstance = new api({
-  user: undefined,
-  pass: undefined,
   printerIds: ids, // needs to get this from printer-config.json
 });
 
@@ -27,21 +25,27 @@ let apiInstance = new api({
 
     badFile = true;
 
-    if (file == undefined || !file.username || !file.password)
+    if (file == undefined || !file.username || !file.password || !file.baseUrl)
       throw "bad user-profile file";
 
     process.env.USER = file.username;
     process.env.PASS = file.password;
+    process.env.BASEURL = file.baseUrl;
 
     badFile = false;
     apiInstance.updateDetails({
       user: file.username,
       pass: file.password,
+      baseUrl: file.baseUrl,
     });
 
     fs.writeFile(
       USER_PATH,
-      JSON.stringify({ username: file.username, password: file.password }),
+      JSON.stringify({
+        username: file.username,
+        password: file.password,
+        baseUrl: file.baseUrl,
+      }),
       (err) => {
         if (err) throw err;
       }
@@ -69,22 +73,43 @@ app.use(function (req, res, next) {
 app.post("/postLogin", (req, res, next) => {
   const username = req.body.username;
   const password = req.body.password;
+  const baseUrl = req.body.baseUrl;
 
   process.env.USER = username;
   process.env.PASS = password;
+  process.env.BASEURL = baseUrl;
 
   badFile = false;
-  apiInstance.updateDetails({ user: username, pass: password });
+  apiInstance.updateDetails({
+    user: username,
+    pass: password,
+    baseUrl: baseUrl,
+  });
   fs.writeFile(
     USER_PATH,
-    JSON.stringify({ username: username, password: password }),
+    JSON.stringify({
+      username: username,
+      password: password,
+      baseUrl: baseUrl,
+    }),
     (err) => {
       if (err) {
         res.send({ success: false, message: err.message });
         throw err;
       }
-      apiInstance.startPrintJobListener();
-      res.send({ success: true });
+      apiInstance
+        .getUserIdAsync()
+        .then((data) => {
+          if (data.error) {
+            res.send({ success: false, error: data.error.message });
+            return;
+          }
+          res.send({ success: true });
+          apiInstance.startPrintJobListener();
+        })
+        .catch((err) => {
+          console.error(err);
+        });
     }
   );
 });
@@ -97,7 +122,7 @@ app.get("/checkLogin", (req, res, next) => {
         res.send({ success: false, error: data.error.message });
         return;
       }
-      res.send({ success: true, data: data.data.id });
+      res.send({ success: true, data: data.data });
     })
     .catch((err) => {
       console.error(err);
