@@ -190,4 +190,6 @@ module.exports.getState = () => {
   return state;
 };
 
+module.exports.SERVICE_WRAPPER_PATH = SERVICE_WRAPPER_PATH;
+
 module.exports.init = init;
