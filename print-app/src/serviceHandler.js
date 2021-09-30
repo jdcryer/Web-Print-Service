@@ -155,7 +155,7 @@ function init(failedAttempts, attempts) {
             }
           });
         } else if (res.data === STATUS_RUNNING) {
-          state = "running";
+          state = "Running";
           resolve({ success: true });
         } else{
           resolve({success: false, error: `Do not recognise ${res.data}`});
