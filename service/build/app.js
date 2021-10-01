@@ -1,17 +1,18 @@
 const express = require("express"); //Used for routing http requests
 const fs = require("fs");
-const printer = require("./modules/printer");
+const printer = new (require("./modules/printer").default)();
 const api = require("./modules/api");
 const app = express();
 const USER_PATH = process.cwd() + "/user-profile.json";
 //require("dotenv").config();
 
 const ids = printer
-  .getPrinters()
+  .getConfig()
   .filter((x) => x.id !== undefined)
   .map((x) => x.id);
 console.log(ids);
 let apiInstance = new api({
+  printerConnector: printer,
   printerIds: ids, // needs to get this from printer-config.json
 });
 
@@ -140,7 +141,7 @@ app.post("/newPrinter", async (req, res, next) => {
   if (newUser.success) {
     res.send(newUser);
     let ids = printer
-      .getPrinters()
+      .getConfig()
       .filter((x) => x.id !== undefined)
       .map((x) => x.id);
 
@@ -157,7 +158,7 @@ app.delete("/deletePrinter", (req, res, next) => {
     .deletePrinterAsync(req.body.printerId)
     .then((data) => {
       let ids = printer
-        .getPrinters()
+        .getConfig()
         .filter((x) => x.id !== undefined)
         .map((x) => x.id);
 
@@ -172,7 +173,7 @@ app.delete("/deletePrinter", (req, res, next) => {
 });
 
 app.get("/printers", (req, res, next) => {
-  res.send(printer.getPrinters());
+  res.send(printer.getConfig());
 });
 
 app.post("/editPrinter", (req, res, next) => {

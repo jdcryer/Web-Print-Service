@@ -1,148 +1,146 @@
-const printer = require("@thiagoelg/node-printer");
+const printerHandler = require("@thiagoelg/node-printer");
 const fs = require("fs");
+const { config } = require("process");
 const PRINT_CONFIG_PATH = process.cwd() + "/printer-config.json";
 const EDITABLE_ATTRIBUTES = ["displayName", "acceptedTypes", "enabled"];
 
-//Stores data loaded from file
-//Gets updating by the getPrinters and updateConfig functions
-let config = [];
-try {
-  fs.statSync(PRINT_CONFIG_PATH);
-  config = JSON.parse(fs.readFileSync(PRINT_CONFIG_PATH, "utf-8"));
-} catch (err) {
-  fs.writeFileSync(PRINT_CONFIG_PATH, JSON.stringify(config));
-}
-
-function getPrinterConfig(name) {
-  return config.find((x) => x.name == name);
-}
-
-function getPrinterById(id) {
-  // Given a printer name and ID, return that printer name
-  const pd = getPrinters();
-  return pd.find((x) => x.id === id)?.name;
-}
-
-function saveConfig() {
-  fs.writeFileSync(PRINT_CONFIG_PATH, JSON.stringify(config));
-}
-
-function addPrinter(name, id, displayName) {
-  // Given a printer name and ID, put that printer ID on that printer object
-  updateConfig(); //Printer data
-
-  const index = config.findIndex((x) => x.name === name);
-  if (index === -1) {
-    console.error(`Could not match printer name "${name}" to a printer`);
-    return false;
+class PrinterConnector {
+  constructor() {
+    this.config = [];
+    try {
+      fs.statSync(PRINT_CONFIG_PATH);
+      this.config = JSON.parse(fs.readFileSync(PRINT_CONFIG_PATH, "utf-8"));
+    } catch (err) {
+      fs.writeFileSync(PRINT_CONFIG_PATH, JSON.stringify(config));
+    }
   }
-  config[index].displayName = displayName;
-  config[index].id = id;
-  config[index].enabled = true;
-  saveConfig();
-  return true;
-}
 
-function removePrinter(id) {
-  // Given a printer name and ID, put that printer ID on that printer object
-  updateConfig(); //Printer data
+  getConfig() {
+    let printersConfig, //Stores current configuration of printers
+      printersStatus; //Stores status of printers to be applied onto the current config to update it
+    //If a printer appears in a status but is not in config it means its a new printer so it creates a new entry with knew default settings
+    printersStatus = printerHandler.getPrinters();
+    if(!printersStatus){
+      throw new Error("Cannot get printers status");
+    }
+    printersConfig = this.config;
 
-  const index = config.findIndex((x) => x.id === id);
-  if (index === -1) {
-    console.error(`Could not match printer id "${id}" to a printer`);
-    return false;
-  }
-  config[index].id = undefined;
-  config[index].enabled = false;
-  saveConfig();
-  return true;
-}
-
-function editPrinter(name, data) {
-  const p = getPrinterConfig(name);
-
-  Object.keys(data).forEach((key) => {
-    if (EDITABLE_ATTRIBUTES.find((x) => x === key) === undefined)
-      throw `Cannot change attribute ${key}.`;
-    p[key] = data[key];
-  });
-  updateConfig();
-}
-
-//Gets all the printers and matches them to their config in printer-config.json
-//If a printer has no config it will be assigned a defualt one and saved to file
-function updateConfig() {
-  changedConfig = false;
-  config = printer.getPrinters().map((el) => {
-    //data from the printer itself
-    const p = {
-      name: el.name,
-      shareName: el.shareName,
-      statusNumber: el.statusNumber,
-      online:
-        el.attributes.find((x) => x == "OFFLINE") != undefined ? false : true,
-    };
-
-    //get configuration from local file
-    const con = getPrinterConfig(el.name);
-    //If does not exist yet create new file
-    if (con == undefined) {
-      changedConfig = true;
-      return {
-        ...p,
-        enabled: false,
-        displayName: el.name,
-        acceptedTypes: [],
+    printersConfig = printersStatus.map((printer) => {
+      let status = {
+        name: printer.name,
+        shareName: printer.shareName,
+        statusNumber: printer.statusNumber,
+        online:
+          printer.attributes.find((x) => x == "OFFLINE") != undefined
+            ? false
+            : true,
       };
-    }
 
-    return {
-      ...con,
-      ...p,
-    };
-    //return Object.assign(con, p);
-  });
+      let c = printersConfig.find((x) => x.name == printer.name);
+      let out = {};
+      if (!c) {
+        //This means the printer is new and has no config
+        out = {
+          ...status,
+          enabled: false,
+          displayName: printer.displayName,
+          acceptedTypes: [],
+        };
+      } else {
+        out = { ...c, ...status };
+      }
 
-  saveConfig();
-  return config;
-}
-
-function getPrinters() {
-  return updateConfig();
-}
-
-function sendPrint(printerName, data, printType) {
-  updateConfig();
-
-  return new Promise((resolve, reject) => {
-    let p = getPrinters().find((x) => x.name == printerName);
-    if (p == undefined) {
-      reject("printer does not exist");
-      return;
-    }
-
-    if (p.enabled == false) {
-      reject("printer disabled");
-      return;
-    }
-    printer.printDirect({
-      data: data,
-      printer: printerName,
-      success: function (jobID) {
-        resolve("success");
-      },
-      error: function (err) {
-        reject(err.message);
-      },
+      return out;
     });
-  });
+
+    this.#saveConfig(printersConfig);
+    this.config = printersConfig;
+    return printersConfig;
+  }
+  sendPrint(printerName, data, printType) {
+    return new Promise((resolve, reject) => {
+      let p = this.#getPrinterConfig(printerName);
+      if (p == undefined) {
+        reject("printer does not exist");
+        return;
+      }
+
+      if (p.enabled == false) {
+        reject("printer disabled");
+        return;
+      }
+
+      if (p.acceptedTypes.find((x) => x == printType) === undefined && false) {
+        reject(
+          `Printer only accepts print types of ${p.acceptedTypes} not ${printType}`
+        );
+        return;
+      }
+      printerHandler.printDirect({
+        data: data,
+        printer: printerName,
+        success: function (jobId) {
+          resolve({ success: true, jobId: jobId });
+        },
+        error: function (err) {
+          reject(err.message);
+        },
+      });
+    });
+  }
+
+  addPrinter(name, id, displayName) {
+    const index = this.getConfig().findIndex((x) => x.name === name);
+
+    if (index === -1) {
+      console.error(`Could not match printer name "${name}" to a printer`);
+      return false;
+    }
+    this.config[index].displayName = displayName;
+    this.config[index].id = id;
+    this.config[index].enabled = true;
+    this.#saveConfig(this.config);
+    return true;
+  }
+  getPrinterById(id) {
+    // Given a printer name and ID
+    return this.getConfig().find((x) => x.id === id);
+  }
+  editPrinter(name, data) {
+    this.config = this.getConfig();
+    const pIndex = this.config.findIndex(x => x.name == name);
+    const p = this.config[pIndex];
+    
+
+    Object.keys(data).forEach((key) => {
+      if (EDITABLE_ATTRIBUTES.find((x) => x === key) === undefined)
+        throw `Cannot change attribute ${key}.`;
+      p[key] = data[key];
+    });
+    this.config[pIndex] = p;
+    this.#saveConfig(this.config);
+  }
+
+  removePrinter(id) {
+    const index = this.getConfig().findIndex((x) => x.id === id);
+    if (index === -1) {
+      console.error(`Could not match printer id "${id}" to a printer`);
+      return false;
+    }
+    this.config[index].id = undefined;
+    this.config[index].enabled = false;
+    saveConfig(this.config);
+    return true;
+  }
+
+  #getPrinterConfig(name) {
+    return this.getConfig().find((x) => x.name == name);
+  }
+
+  #saveConfig(config) {
+    fs.writeFileSync(PRINT_CONFIG_PATH, JSON.stringify(config));
+  }
 }
 
-updateConfig();
 
-module.exports.getPrinters = getPrinters;
-module.exports.sendPrint = sendPrint;
-module.exports.addPrinter = addPrinter;
-module.exports.getPrinterById = getPrinterById;
-module.exports.editPrinter = editPrinter;
-module.exports.removePrinter = removePrinter;
+module.exports.default = PrinterConnector;

@@ -151,6 +151,7 @@ if (!handleSquirrelEvent()) {
     serviceHandlerUpdateInt = setInterval(() => {
       event.reply("serviceHandlerState", getState());
     }, 200);
+    return;
     init(0, 0)
       .then((data) => {
         if(data.success) clearInterval(serviceHandlerUpdateInt);

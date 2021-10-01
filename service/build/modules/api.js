@@ -1,19 +1,13 @@
 const axios = require("axios");
 const { build } = require("./label_constructor");
-const {
-  sendPrint,
-  addPrinter,
-  getPrinterById,
-  removePrinter,
-  editPrinter,
-} = require("./printer");
 const fs = require("fs");
 
 class Api {
-  constructor({ user, pass, baseUrl, printerIds }) {
+  constructor({ user, pass, baseUrl, printerConnector, printerIds }) {
     this.user = user;
     this.pass = pass;
     this.baseUrl = baseUrl;
+    this.printerConn = printerConnector;
     this.printerIds = printerIds;
     this.running = false;
     this.failures = 0;
@@ -93,7 +87,7 @@ class Api {
         type: type,
         public: isPublic,
       });
-      addPrinter(printerName, res.data.id, displayName);
+      this.printerConn.addPrinter(printerName, res.data.id, displayName);
       return { success: true, data: res.data };
     } catch (error) {
       return { success: false, error: error };
@@ -114,7 +108,7 @@ class Api {
     try {
       const res = await axios.delete(this.deletePrinterUrl(printerId));
       if (res.statusText === "OK") {
-        removePrinter(printerId);
+        this.printerConn.removePrinter(printerId);
 
         return { success: true };
       }
@@ -204,8 +198,8 @@ class Api {
                 fs.writeFileSync("output.txt", zpl);
 
                 try {
-                  const printSuccess = await sendPrint(
-                    getPrinterById(jobArray[i].job.fk_printer),
+                  const printSuccess = await this.printerConn.sendPrint(
+                    this.printerConn.getPrinterById(jobArray[i].job.fk_printer).name,
                     zpl,
                     ""
                   );
