@@ -27,7 +27,7 @@ function saveConfig() {
   fs.writeFileSync(PRINT_CONFIG_PATH, JSON.stringify(config));
 }
 
-function addPrinter(name, id, displayName) {
+function addPrinter(name, id, displayName, type) {
   // Given a printer name and ID, put that printer ID on that printer object
   updateConfig(); //Printer data
 
@@ -39,6 +39,7 @@ function addPrinter(name, id, displayName) {
   config[index].displayName = displayName;
   config[index].id = id;
   config[index].enabled = true;
+  config[index].acceptedTypes = [type];
   saveConfig();
   return true;
 }
@@ -54,6 +55,8 @@ function removePrinter(id) {
   }
   config[index].id = undefined;
   config[index].enabled = false;
+  config[index].acceptedTypes = [];
+  config[index].displayName = undefined;
   saveConfig();
   return true;
 }

@@ -1,54 +1,40 @@
 import React, { useState, useEffect } from "react";
-const { ipcRenderer, remote } = window.require("electron");
-import { makeStyles } from "@material-ui/core/styles";
-import { Print, Cancel, CheckCircle } from "@material-ui/icons";
-import { ServiceStatusDisplay } from "../ui-library/";
+const { ipcRenderer } = window.require("electron");
+import { ServiceStatusDisplay, FullscreenModal } from "../ui-library/";
+import { Button } from "@material-ui/core";
+import { useQueryClient } from "react-query";
 
-const useStyles = makeStyles({
-  root: {
-    backgroundColor: "white",
-    border: "1px solid black",
-    padding: 3,
-    margin: 3,
-    width: 400,
-    display: "flex",
-    flexDirection: "column",
-  },
-  icon: {
-    padding: 12,
-  },
-  spacer: {
-    flexGrow: 1,
-  },
-});
-
-function ServicePanel() {
-  const [handlerState, setHandlerState] = useState("Unkown");
+function ServicePanel({ open, setOpen }) {
+  const [handlerState, setHandlerState] = useState("Unknown");
+  const queryClient = useQueryClient();
 
   useEffect(() => {
-    let serviceListener = ipcRenderer.on("serviceHandlerState", (event, arg) =>
-      setHandlerState(arg)
+    let serviceListener = ipcRenderer.on(
+      "serviceHandlerState",
+      (event, arg) => {
+        setHandlerState(arg);
+      }
     );
 
     ipcRenderer.send("startServiceHandlerUpdate");
-
     return () => {
       ipcRenderer.removeListener("serviceHandlerState", serviceListener);
     };
   }, []);
 
-  const classes = useStyles();
+  useEffect(() => {
+    if (!setOpen || !handlerState) return;
+    if (handlerState === "Running") {
+      ipcRenderer.send("status", "");
+      queryClient.invalidateQueries("checkLogin");
+
+      setOpen(false);
+    }
+  }, [setOpen, handlerState]);
   return (
-    <div className={classes.root}>
-      <button
-        onClick={() => {
-          //Does nothing just here to relieve stress of frustrated user
-        }}
-      >
-        Refresh
-      </button>
-      <ServiceStatusDisplay status={handlerState} />
-    </div>
+    <FullscreenModal open={open}>
+      <ServiceStatusDisplay>{handlerState}</ServiceStatusDisplay>
+    </FullscreenModal>
   );
 }
 

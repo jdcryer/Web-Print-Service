@@ -1,11 +1,11 @@
 {
-  "name": "print-app",
-  "productName": "print-app",
-  "version": "1.0.0",
-  "description": "My Electron application description",
+  "name": "web-print-service",
+  "productName": "Web Print Service",
+  "version": "1.1.0",
+  "description": "The basic Electron wrapper for the web print service",
   "main": ".webpack/main",
   "scripts": {
-    "start": "electron-forge start -- arg1 arg2",
+    "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
@@ -24,7 +24,7 @@
         {
           "name": "@electron-forge/maker-squirrel",
           "config": {
-            "name": "print_app"
+            "name": "web_print_service"
           }
         },
         {

@@ -93,7 +93,25 @@ class Api {
         type: type,
         public: isPublic,
       });
-      addPrinter(printerName, res.data.id, displayName);
+      addPrinter(printerName, res.data.id, displayName, type);
+      return { success: true, data: res.data };
+    } catch (error) {
+      return { success: false, error: error };
+    }
+  }
+
+  async editPrinterAsync(printerId, printerName, displayName, type, isPublic) {
+    try {
+      const res = await axios.put(this.postNewPrinterUrl(), {
+        id: printerId,
+        name: displayName,
+        type: type,
+        public: isPublic,
+      });
+      editPrinter(printerName, {
+        displayName: displayName,
+        acceptedTypes: [type],
+      });
       return { success: true, data: res.data };
     } catch (error) {
       return { success: false, error: error };
@@ -177,7 +195,6 @@ class Api {
               }
               return;
             }
-            console.log("Number of jobs: " + res.data);
 
             if (res.data === 0) return;
 
@@ -192,7 +209,7 @@ class Api {
               jobArray.push({ job: jobs.data[i], items: items.data });
             }
 
-            console.log(jobArray); // DO SOMETHING WITH JOBS HERE
+            console.log(jobArray);
             for (let i = 0; i < jobArray.length; i++) {
               for (let j = 0; j < jobArray[i].items.length; j++) {
                 const zpl = await build(
@@ -217,14 +234,9 @@ class Api {
                 }
               }
             }
-
-            // Maybe we should add jobs to a parent array outside of API?
-            // That would mean that a separate listener pulls jobs off of the parent array as they appear, and print them.
-            // Would be a better way to handle multiple printers? So printing from one printer doesn't hold back printing from another.
-            // Probably best to discuss this properly before final build.
           })
           .catch((error) => console.error(error.message)),
-      1000
+      3000
     );
   }
 

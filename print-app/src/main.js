@@ -1,6 +1,3 @@
-console.log("HEllo!");
-console.log(process.argv);
-
 const { app, BrowserWindow, ipcMain, session } = require("electron");
 
 if (require("electron-squirrel-startup")) {
@@ -153,7 +150,8 @@ if (!handleSquirrelEvent()) {
     }, 200);
     init(0, 0)
       .then((data) => {
-        if(data.success) clearInterval(serviceHandlerUpdateInt);
+        if (data.success) clearInterval(serviceHandlerUpdateInt);
+        event.reply("serviceHandlerState", getState());
         console.log(data);
       })
       .catch((err) => {
@@ -182,8 +180,14 @@ if (!handleSquirrelEvent()) {
   const createWindow = () => {
     // Create the browser window.
     const mainWindow = new BrowserWindow({
-      width: 800,
+      width: 600,
       height: 600,
+      minWidth: 600,
+      maxWidth: 800,
+      minHeight: 600,
+      maxHeight: 800,
+      titleBarStyle: "hidden",
+
       webPreferences: {
         nodeIntegration: true,
         enableRemoteModule: true,
@@ -191,11 +195,11 @@ if (!handleSquirrelEvent()) {
         allowRunningInsecureContent: true,
       },
     });
+    mainWindow.setMenuBarVisibility(false);
+
+    //mainWindow.webContents.openDevTools();
     // and load the index.html of the app.
     mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
-
-    // Open the DevTools.
-    mainWindow.webContents.openDevTools();
   };
 
   // This method will be called when Electron has finished

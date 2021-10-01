@@ -10,7 +10,6 @@ const ids = printer
   .getPrinters()
   .filter((x) => x.id !== undefined)
   .map((x) => x.id);
-console.log(ids);
 let apiInstance = new api({
   printerIds: ids, // needs to get this from printer-config.json
 });
@@ -66,7 +65,7 @@ app.use(function (req, res, next) {
     "Access-Control-Allow-Headers",
     "Origin, X-Requested-With, Content-Type, Accept"
   );
-  res.header("Access-Control-Allow-Methods", "GET, POST, DELETE");
+  res.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT");
   next();
 });
 
@@ -175,11 +174,19 @@ app.get("/printers", (req, res, next) => {
   res.send(printer.getPrinters());
 });
 
-app.post("/editPrinter", (req, res, next) => {
-  const printerName = req.body.printerName;
-  const data = req.body.data;
-  printer.editPrinter(printerName, data);
-  res.send({ success: true });
+app.put("/editPrinter", async (req, res, next) => {
+  const editPrinter = await apiInstance.editPrinterAsync(
+    req.body.printerId,
+    req.body.printerName,
+    req.body.displayName,
+    req.body.type,
+    true
+  );
+  if (editPrinter.success) {
+    res.send(editPrinter);
+  } else {
+    console.error(editPrinter.error);
+  }
 });
 
 module.exports = app;

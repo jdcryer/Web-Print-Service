@@ -49,6 +49,26 @@ export async function useQueryPostPrinter(
   }).then((res) => res.json());
 }
 
+export async function useQueryEditPrinter(
+  printerId,
+  printerName,
+  displayName,
+  type
+) {
+  return fetch("http://localhost:3001/editPrinter", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      printerId: printerId,
+      printerName: printerName,
+      displayName: displayName,
+      type: type,
+    }),
+  }).then((res) => res.json());
+}
+
 export async function useQueryDeletePrinter(printerId) {
   return fetch("http://localhost:3001/deletePrinter", {
     method: "DELETE",
