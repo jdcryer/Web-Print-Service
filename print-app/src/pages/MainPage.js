@@ -2,7 +2,14 @@ import React, { useEffect, useState } from "react";
 const { ipcRenderer, remote } = window.require("electron");
 import { useQueryPostLogin, useQueryCheckLogin } from "../endpoints";
 import { useMutation, useQueryClient } from "react-query";
-import { PrinterPanel, NewPrinter, Login, ServicePanel } from "../containers";
+import {
+  PrinterPanel,
+  NewPrinter,
+  Login,
+  ServicePanel,
+  StatusPanel,
+} from "../containers";
+import { Button } from "@material-ui/core";
 
 function MainPage() {
   const [log, setLog] = useState({});
@@ -11,18 +18,47 @@ function MainPage() {
   const [newPrinterOpen, setNewPrinterOpen] = useState(false);
 
   const [loginOpen, setLoginOpen] = useState(false);
+  const [loginForced, setLoginForced] = useState(false);
+
+  const [serviceOpen, setServiceOpen] = useState(false);
+  const [statusOpen, setStatusOpen] = useState(false);
+
+  const { data: loginData } = useQueryCheckLogin();
+
+  useEffect(() => {
+    if (!loginData?.success) {
+      if (status?.data !== "running") {
+        setServiceOpen(true);
+      } else {
+        setServiceOpen(false);
+        setLoginForced(true);
+        setLoginOpen(true);
+      }
+    } else {
+      setLoginForced(false);
+      setServiceOpen(false);
+    }
+  }, [loginData, status, setServiceOpen, setLoginForced, setLoginOpen]);
+
+  useEffect(() => {
+    if (loginForced === false) setLoginOpen(false);
+  }, [loginForced, setLoginOpen]);
 
   useEffect(() => {
     ipcRenderer.on("getLogs", (event, arg) => {
       setLog(arg);
-      console.log("getLogs:", arg);
-    });
-    ipcRenderer.on("status", (event, arg) => {
-      setStatus(arg);
-      console.log("Status:", arg);
     });
 
-    ipcRenderer.send("status", "");
+    let statusListener = ipcRenderer.on("status", (event, arg) => {
+      setStatus(arg);
+    });
+
+    //let intId = setInterval(() => ipcRenderer.send("status", ""), 3000);
+
+    return () => {
+      ipcRenderer.removeListener("status", statusListener);
+      //clearInterval(intId);
+    };
   }, []);
 
   useEffect(() => {
@@ -44,12 +80,31 @@ function MainPage() {
   }, []);
 
   return (
-    <div>
-      {log?.success ? log?.data : log?.error?.message}
+    <div style={{ display: "flex", flexDirection: "column" }}>
+      <PrinterPanel />
+      <Button variant="outlined" onClick={() => setLoginOpen(true)}>
+        Edit login details
+      </Button>
       <br />
-      {status?.success ? status?.data : "Fail"}
+      <Button variant="outlined" onClick={() => setStatusOpen(true)}>
+        Check Service Status
+      </Button>
       <br />
 
+      <Button variant="outlined" onClick={() => setNewPrinterOpen(true)}>
+        Add New Printer
+      </Button>
+
+      <Login open={loginOpen} setOpen={setLoginOpen} forced={loginForced} />
+      <ServicePanel open={serviceOpen} setOpen={setServiceOpen} />
+      <StatusPanel
+        open={statusOpen}
+        setOpen={setStatusOpen}
+        serviceStatus={status?.data}
+        loginStatus={loginData?.success}
+      />
+      <NewPrinter open={newPrinterOpen} setOpen={setNewPrinterOpen} />
+      {/*
       <button
         onClick={() => {
           dialog.showErrorBox("Error Box", "Fatal Error");
@@ -120,13 +175,7 @@ function MainPage() {
         }}
       >
         Get error logs
-      </button>
-
-      <PrinterPanel />
-
-      <ServicePanel />
-      <NewPrinter open={newPrinterOpen} setOpen={setNewPrinterOpen} />
-      <Login open={loginOpen} setOpen={setLoginOpen} forced={false} />
+      </button>*/}
     </div>
   );
 }

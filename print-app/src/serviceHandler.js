@@ -81,7 +81,6 @@ function execute(command) {
 function service(command) {
   let prom;
   let postProcess = (out) => out;
-  console.log(command);
   switch (command) {
     case "install":
       prom = execute(installServiceCommand);
@@ -119,7 +118,7 @@ function service(command) {
 }
 
 function init(failedAttempts, attempts) {
-  if(failedAttempts > 5 || attempts > 20){
+  if (failedAttempts > 5 || attempts > 20) {
     throw new Error("Too many failed attempts");
   }
 
@@ -145,7 +144,7 @@ function init(failedAttempts, attempts) {
             }
           });
         } else if (res.data === STATUS_STOPPED) {
-          state = "starting";
+          state = "Starting";
           service("start").then((data) => {
             if (data.success == true) {
               state = "Running";
@@ -157,8 +156,8 @@ function init(failedAttempts, attempts) {
         } else if (res.data === STATUS_RUNNING) {
           state = "Running";
           resolve({ success: true });
-        } else{
-          resolve({success: false, error: `Do not recognise ${res.data}`});
+        } else {
+          resolve({ success: false, error: `Do not recognise ${res.data}` });
         }
       }
     });
@@ -182,7 +181,6 @@ function getLogs(from) {
     });
   });
 }
-
 
 module.exports.service = service;
 module.exports.getLogs = getLogs;

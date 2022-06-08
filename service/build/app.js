@@ -7,10 +7,9 @@ const USER_PATH = process.cwd() + "/user-profile.json";
 //require("dotenv").config();
 
 const ids = printer
-	.getConfig()
-	.filter((x) => x.id !== undefined)
-	.map((x) => x.id);
-console.log(ids);
+  .getPrinters()
+  .filter((x) => x.id !== undefined)
+  .map((x) => x.id);
 let apiInstance = new api({
 	printerConnector: printer,
 	printerIds: ids, // needs to get this from printer-config.json
@@ -62,13 +61,13 @@ let apiInstance = new api({
 app.use(express.json());
 
 app.use(function (req, res, next) {
-	res.header("Access-Control-Allow-Origin", "http://localhost:3000");
-	res.header(
-		"Access-Control-Allow-Headers",
-		"Origin, X-Requested-With, Content-Type, Accept"
-	);
-	res.header("Access-Control-Allow-Methods", "GET, POST, DELETE");
-	next();
+  res.header("Access-Control-Allow-Origin", "http://localhost:3000");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept"
+  );
+  res.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT");
+  next();
 });
 
 app.post("/postLogin", (req, res, next) => {
@@ -176,11 +175,19 @@ app.get("/printers", (req, res, next) => {
 	res.send(printer.getConfig());
 });
 
-app.post("/editPrinter", (req, res, next) => {
-	const printerName = req.body.printerName;
-	const data = req.body.data;
-	printer.editPrinter(printerName, data);
-	res.send({ success: true });
+app.put("/editPrinter", async (req, res, next) => {
+  const editPrinter = await apiInstance.editPrinterAsync(
+    req.body.printerId,
+    req.body.printerName,
+    req.body.displayName,
+    req.body.type,
+    true
+  );
+  if (editPrinter.success) {
+    res.send(editPrinter);
+  } else {
+    console.error(editPrinter.error);
+  }
 });
 
 app.post("/sendTestPrint", (req, res, next) => {

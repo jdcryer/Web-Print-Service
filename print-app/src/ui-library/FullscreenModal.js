@@ -14,10 +14,14 @@ const useStyles = makeStyles({
   },
 });
 
-function FullscreenModal({ children, open, ...rest }) {
+function FullscreenModal({ children, open, slow, ...rest }) {
   const classes = useStyles();
   return (
-    <Dialog open={open} fullScreen={true}>
+    <Dialog
+      open={open}
+      fullScreen={true}
+      transitionDuration={{ enter: 300, exit: slow ? 2000 : 300 }}
+    >
       <DialogContent className={classes.root}>
         <div className={classes.child}>{children}</div>
       </DialogContent>

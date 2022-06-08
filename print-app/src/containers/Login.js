@@ -6,13 +6,6 @@ import { useMutation, useQueryClient } from "react-query";
 import { FullscreenModal, Text } from "../ui-library";
 
 const useStyles = makeStyles({
-  root: {
-    backgroundColor: "white",
-    border: "1px solid black",
-    padding: 10,
-    margin: 10,
-    width: 300,
-  },
   formControl: {
     width: "100%",
   },
@@ -91,90 +84,85 @@ function Login({ open, setOpen, forced }) {
 
   const classes = useStyles();
   return (
-    <>
-      <Button variant="outlined" onClick={() => setOpen(true)}>
-        Open login
-      </Button>
-      <FullscreenModal open={open}>
-        <Text large bold>
-          Login to API
-        </Text>
-        <FormControl className={classes.formControl}>
-          <TextField
-            label="Username"
-            value={username}
-            onChange={(n) => {
-              setIsError((t) => t.filter((x) => x !== "username"));
-              setUsername(n.target.value);
-            }}
-            error={isError?.includes("username")}
-            margin="dense"
-          />
-        </FormControl>
-        <FormControl className={classes.formControl}>
-          <TextField
-            label="Password"
-            value={password}
-            onChange={(n) => {
-              setIsError((t) => t.filter((x) => x !== "password"));
-              setPassword(n.target.value);
-            }}
-            error={isError?.includes("password")}
-            margin="dense"
-            type="password"
-          />
-        </FormControl>
+    <FullscreenModal open={open}>
+      <Text large bold>
+        Login to API
+      </Text>
+      <FormControl className={classes.formControl}>
+        <TextField
+          label="Username"
+          value={username}
+          onChange={(n) => {
+            setIsError((t) => t.filter((x) => x !== "username"));
+            setUsername(n.target.value);
+          }}
+          error={isError?.includes("username")}
+          margin="dense"
+        />
+      </FormControl>
+      <FormControl className={classes.formControl}>
+        <TextField
+          label="Password"
+          value={password}
+          onChange={(n) => {
+            setIsError((t) => t.filter((x) => x !== "password"));
+            setPassword(n.target.value);
+          }}
+          error={isError?.includes("password")}
+          margin="dense"
+          type="password"
+        />
+      </FormControl>
 
-        <FormControl className={classes.formControl}>
-          <TextField
-            label="Base Url"
-            value={baseUrl}
-            onChange={(n) => {
-              setIsError((t) => t.filter((x) => x !== "baseUrl"));
-              setBaseUrl(n.target.value);
-            }}
-            error={isError?.includes("baseUrl")}
-            margin="dense"
-          />
-        </FormControl>
-        <div className={classes.buttons}>
-          {forced ? null : (
-            <Button
-              variant="contained"
-              className={classes.submit}
-              onClick={() => {
-                setUsername("");
-                setPassword("");
-                setBaseUrl("");
-                setIsError([]);
-                setLoginState("");
-                setOpen(false);
-              }}
-            >
-              Cancel
-            </Button>
-          )}
+      <FormControl className={classes.formControl}>
+        <TextField
+          label="Base Url"
+          value={baseUrl}
+          onChange={(n) => {
+            setIsError((t) => t.filter((x) => x !== "baseUrl"));
+            setBaseUrl(n.target.value);
+          }}
+          error={isError?.includes("baseUrl")}
+          margin="dense"
+        />
+      </FormControl>
+      <div className={classes.buttons}>
+        {forced ? null : (
           <Button
             variant="contained"
             className={classes.submit}
-            onClick={handleSubmit}
+            onClick={() => {
+              setUsername("");
+              setPassword("");
+              setBaseUrl("");
+              setIsError([]);
+              setLoginState("");
+              setOpen(false);
+            }}
           >
-            Submit
+            Cancel
           </Button>
-        </div>
+        )}
+        <Button
+          variant="contained"
+          className={classes.submit}
+          onClick={handleSubmit}
+        >
+          Submit
+        </Button>
+      </div>
 
-        {loginState !== "" ? (
-          <>
-            <Text bold>Error: </Text>
-            <Text error>{loginState}</Text>
-          </>
-        ) : null}
+      {loginState !== "" ? (
+        <>
+          <Text bold>Error: </Text>
+          <Text error>{loginState}</Text>
+        </>
+      ) : null}
 
-        {editLoginMutation.isError ? (
-          <div>An error has occurred: {editLoginMutation.error.message} </div>
-        ) : null}
-      </FullscreenModal>
-    </>
+      {editLoginMutation.isError ? (
+        <div>An error has occurred: {editLoginMutation.error.message} </div>
+      ) : null}
+    </FullscreenModal>
   );
 }
 

@@ -1,20 +1,22 @@
-import React from "react";
+import React, { useState } from "react";
 import { IconButton } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 import { Print, Cancel, CheckCircle, MoreHoriz } from "@material-ui/icons";
 import { Text, PrinterDisplay } from "../ui-library";
 import { useQueryGetPrinters, useQueryDeletePrinter } from "../endpoints";
 import { useQueryClient, useMutation } from "react-query";
+import { EditPrinter } from ".";
 
 const useStyles = makeStyles({
   root: {
     backgroundColor: "white",
-    border: "1px solid black",
     padding: 3,
     margin: 3,
-    width: 400,
     display: "flex",
     flexDirection: "column",
+    maxHeight: 275,
+    overflow: "scroll",
+    overflowX: "hidden",
   },
   row: {
     display: "flex",
@@ -33,6 +35,7 @@ function PrinterPanel() {
   const queryClient = useQueryClient();
   const { data: printerData } = useQueryGetPrinters();
 
+  const [selectedPrinter, setSelectedPrinter] = useState({});
   const deletePrinterMutation = useMutation(
     async (details) => useQueryDeletePrinter(details.id),
     {
@@ -44,19 +47,41 @@ function PrinterPanel() {
   const classes = useStyles();
   return (
     <div className={classes.root}>
+      <EditPrinter
+        open={selectedPrinter?.printerId !== undefined}
+        setOpen={(b) => (!b ? setSelectedPrinter({}) : null)}
+        printerId={selectedPrinter?.printerId}
+        printerName={selectedPrinter?.printerName}
+        oldDisplayName={selectedPrinter?.displayName}
+        type={selectedPrinter?.type}
+      />
+
       {printerData
         ?.filter((printer) => printer.enabled)
         .map((printer, i) => (
-          <PrinterDisplay
-            name={printer.name}
-            online={printer.online}
-            key={`printerDisplay${i}`}
-            onDelete={() =>
-              deletePrinterMutation.mutate({
-                id: printer.id,
-              })
-            }
-          />
+          <>
+            <PrinterDisplay
+              name={printer.name}
+              displayName={printer.displayName}
+              online={printer.online}
+              key={`printerDisplay${i}`}
+              onEdit={() =>
+                setSelectedPrinter({
+                  printerId: printer?.id,
+                  printerName: printer?.name,
+                  displayName: printer?.displayName,
+                  type: printer?.acceptedTypes
+                    ? printer.acceptedTypes[0]
+                    : undefined,
+                })
+              }
+              onDelete={() =>
+                deletePrinterMutation.mutate({
+                  id: printer.id,
+                })
+              }
+            />
+          </>
         ))}
     </div>
   );

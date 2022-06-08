@@ -12,20 +12,23 @@ import {
   DialogTitle,
 } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
-import {
-  useQueryGetPrinters,
-  useQueryPostPrinter,
-  useQueryCheckLogin,
-} from "../endpoints";
+import { useQueryEditPrinter } from "../endpoints";
 import { useMutation, useQueryClient } from "react-query";
 
-function NewPrinter({ open, setOpen }) {
+function EditPrinter({
+  open,
+  setOpen,
+  printerId,
+  printerName,
+  oldDisplayName,
+  type,
+}) {
   const queryClient = useQueryClient();
 
-  const addPrinterMutation = useMutation(
+  const editPrinterMutation = useMutation(
     async (details) =>
-      useQueryPostPrinter(
-        details.userId,
+      useQueryEditPrinter(
+        details.printerId,
         details.printerName,
         details.displayName,
         details.type
@@ -36,50 +39,44 @@ function NewPrinter({ open, setOpen }) {
       },
     }
   );
-  const { data: loginData } = useQueryCheckLogin();
 
   const [isError, setIsError] = useState([]);
-  const [printer, setPrinter] = useState("");
-  const [printerName, setPrinterName] = useState("");
-
-  const { data: printerData } = useQueryGetPrinters();
-  const printers = printerData?.filter((p) => !p.enabled);
+  const [displayName, setDisplayName] = useState("");
 
   const printerTypes = [
     { type: "label", name: "Label" },
     { type: "printer", name: "Printer" },
   ];
-  const [printerType, setPrinterType] = useState(printerTypes[0]);
 
-  const handleClickOpen = () => {
-    setOpen(true);
-  };
+  const [printerType, setPrinterType] = useState(printerTypes[1]);
+
+  useEffect(() => {
+    setPrinterType(
+      printerTypes.find((x) => x.type === type) ?? printerTypes[1]
+    );
+  }, [type]);
+
+  useEffect(() => {
+    setDisplayName(oldDisplayName ?? "");
+  }, [oldDisplayName]);
 
   const handleSubmit = () => {
     setIsError((t) => {
-      if (printer === "") {
-        t = t.includes("printer-select") ? t : [...t, "printer-select"];
+      if (displayName === "") {
+        t = t.includes("display-name") ? t : [...t, "display-name"];
       } else {
-        t = t.includes("printer-select")
-          ? t.filter((x) => x !== "printer-select")
-          : t;
-      }
-
-      if (printerName === "") {
-        t = t.includes("printer-name") ? t : [...t, "printer-name"];
-      } else {
-        t = t.includes("printer-name")
-          ? t.filter((x) => x !== "printer-name")
+        t = t.includes("display-name")
+          ? t.filter((x) => x !== "display-name")
           : t;
       }
 
       if (t.length > 0) {
         return t;
       }
-      addPrinterMutation.mutate({
-        userId: loginData?.data,
-        printerName: printer,
-        displayName: printerName,
+      editPrinterMutation.mutate({
+        printerId: printerId,
+        printerName: printerName,
+        displayName: displayName,
         type: printerType.type,
       });
       handleClose();
@@ -88,36 +85,20 @@ function NewPrinter({ open, setOpen }) {
   };
 
   const handleClose = () => {
-    setPrinter("");
-    setPrinterName("");
+    setDisplayName("");
     setOpen(false);
   };
 
   return (
     <Dialog open={open} onClose={handleClose} fullWidth>
-      <DialogTitle>Add a new printer</DialogTitle>
+      <DialogTitle>Edit printer {printerName}</DialogTitle>
       <DialogContent>
         <FormControl fullWidth>
-          <InputLabel htmlFor="printer-select">Select a printer</InputLabel>
-          <Select
-            error={isError?.includes("printer-select")}
-            id="printer-select"
-            value={printer}
-            onChange={(n) => setPrinter(n.target.value)}
-          >
-            {printers?.map((p, i) => (
-              <MenuItem value={p.name} key={i}>
-                {p.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <FormControl fullWidth>
           <TextField
-            error={isError?.includes("printer-name")}
-            label="Printer name"
-            value={printerName}
-            onChange={(n) => setPrinterName(n.target.value)}
+            error={isError?.includes("display-name")}
+            label="Display name"
+            value={displayName}
+            onChange={(n) => setDisplayName(n.target.value)}
             margin="dense"
             helperText="This will be what is displayed on i.LEVEL"
           />
@@ -144,10 +125,10 @@ function NewPrinter({ open, setOpen }) {
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose}>Cancel</Button>
-        <Button onClick={handleSubmit}>Add</Button>
+        <Button onClick={handleSubmit}>Edit</Button>
       </DialogActions>
     </Dialog>
   );
 }
 
-export default NewPrinter;
+export default EditPrinter;

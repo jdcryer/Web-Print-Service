@@ -1,6 +1,3 @@
-console.log("HEllo!");
-console.log(process.argv);
-
 const { app, BrowserWindow, ipcMain, session } = require("electron");
 
 if (require("electron-squirrel-startup")) {
@@ -17,7 +14,7 @@ function handleSquirrelEvent() {
   const os = require("os");
   const fs = require("fs");
   const path = require("path");
-  const { SERVICE_WRAPPER_PATH } = require("./serviceHandler");
+  const { SERVICE_WRAPPER_PATH, service } = require("./serviceHandler");
 
   const appFolder = path.resolve(process.execPath, "..");
   const rootAtomFolder = path.resolve(appFolder, "..");
@@ -87,14 +84,25 @@ function handleSquirrelEvent() {
       // Remove desktop and start menu shortcuts
       spawnUpdate(["--removeShortcut", exeName]);
 
-      fs.writeFileSync(
-        os.tmpdir() + "/service-wrapper.exe",
-        fs.readFileSync(`${SERVICE_WRAPPER_PATH}\\service-wrapper.exe`)
+      fs.readFile(
+        `${SERVICE_WRAPPER_PATH}\\service-wrapper.exe`,
+        (err, data) => {}
       );
+      fs.writeFile(os.tmpdir() + "/service-wrapper.exe");
       fs.writeFileSync(
         os.tmpdir() + "/service-wrapper.xml",
         fs.readFileSync(`${SERVICE_WRAPPER_PATH}\\service-wrapper.xml`)
       );
+
+      service("start").then(() => {
+        fetch("localhost:3001/getPrinters")
+          .then(function (response) {
+            return response.text();
+          })
+          .then(function (text) {
+            fs.writeFile(os.tmpdir() + "/testresult.txt", text);
+          });
+      });
 
       spawnService();
 
@@ -154,7 +162,8 @@ if (!handleSquirrelEvent()) {
     return;
     init(0, 0)
       .then((data) => {
-        if(data.success) clearInterval(serviceHandlerUpdateInt);
+        if (data.success) clearInterval(serviceHandlerUpdateInt);
+        event.reply("serviceHandlerState", getState());
         console.log(data);
       })
       .catch((err) => {
@@ -183,8 +192,14 @@ if (!handleSquirrelEvent()) {
   const createWindow = () => {
     // Create the browser window.
     const mainWindow = new BrowserWindow({
-      width: 800,
+      width: 600,
       height: 600,
+      minWidth: 600,
+      maxWidth: 800,
+      minHeight: 600,
+      maxHeight: 800,
+      titleBarStyle: "hidden",
+
       webPreferences: {
         nodeIntegration: true,
         enableRemoteModule: true,
@@ -192,11 +207,11 @@ if (!handleSquirrelEvent()) {
         allowRunningInsecureContent: true,
       },
     });
+    mainWindow.setMenuBarVisibility(false);
+
+    //mainWindow.webContents.openDevTools();
     // and load the index.html of the app.
     mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
-
-    // Open the DevTools.
-    mainWindow.webContents.openDevTools();
   };
 
   // This method will be called when Electron has finished

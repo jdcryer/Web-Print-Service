@@ -3,5 +3,6 @@ export {
   useQueryCheckLogin,
   useQueryPostLogin,
   useQueryPostPrinter,
+  useQueryEditPrinter,
   useQueryDeletePrinter,
 } from "./api";
