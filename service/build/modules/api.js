@@ -229,7 +229,7 @@ class Api {
               }
             }
           })
-          .catch((error) => console.error(error.message)),
+          .catch((error) => console.error("error: ", error)),
       3000
     );
   }

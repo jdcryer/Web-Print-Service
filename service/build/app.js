@@ -7,7 +7,7 @@ const USER_PATH = process.cwd() + "/user-profile.json";
 //require("dotenv").config();
 
 const ids = printer
-  .getPrinters()
+  .getConfig()
   .filter((x) => x.id !== undefined)
   .map((x) => x.id);
 let apiInstance = new api({
