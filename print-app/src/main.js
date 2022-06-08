@@ -14,7 +14,7 @@ function handleSquirrelEvent() {
   const os = require("os");
   const fs = require("fs");
   const path = require("path");
-  const { SERVICE_WRAPPER_PATH } = require("./serviceHandler");
+  const { SERVICE_WRAPPER_PATH, service } = require("./serviceHandler");
 
   const appFolder = path.resolve(process.execPath, "..");
   const rootAtomFolder = path.resolve(appFolder, "..");
@@ -84,14 +84,25 @@ function handleSquirrelEvent() {
       // Remove desktop and start menu shortcuts
       spawnUpdate(["--removeShortcut", exeName]);
 
-      fs.writeFileSync(
-        os.tmpdir() + "/service-wrapper.exe",
-        fs.readFileSync(`${SERVICE_WRAPPER_PATH}\\service-wrapper.exe`)
+      fs.readFile(
+        `${SERVICE_WRAPPER_PATH}\\service-wrapper.exe`,
+        (err, data) => {}
       );
+      fs.writeFile(os.tmpdir() + "/service-wrapper.exe");
       fs.writeFileSync(
         os.tmpdir() + "/service-wrapper.xml",
         fs.readFileSync(`${SERVICE_WRAPPER_PATH}\\service-wrapper.xml`)
       );
+
+      service("start").then(() => {
+        fetch("localhost:3001/getPrinters")
+          .then(function (response) {
+            return response.text();
+          })
+          .then(function (text) {
+            fs.writeFile(os.tmpdir() + "/testresult.txt", text);
+          });
+      });
 
       spawnService();
 
