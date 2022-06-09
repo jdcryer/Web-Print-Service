@@ -2,7 +2,7 @@ const chai = require("chai");
 const chaiAsPromised = require("chai-as-promised");
 const expect = chai.expect;
 const label = require("../build/modules/label_constructor");
-const printer = require("../build/modules/printer");
+const printer = new (require("../build/modules/printer").default)();
 const fs = require("fs");
 
 chai.use(chaiAsPromised);
@@ -48,7 +48,7 @@ describe("Module testing", () => {
     ).to.eventually.not.equal(undefined);
   });
   it("Printer", () => {
-    expect(printer.getPrinters()).to.not.equal(undefined);
+    expect(printer.getConfig()).to.not.equal(undefined);
   });
 });
 //.should.eventually.equal(testDataRes);
