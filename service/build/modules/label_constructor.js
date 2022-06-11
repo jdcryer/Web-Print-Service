@@ -73,41 +73,42 @@ Z - Only one command, ZZ puts the printer to sleep:)
  * @returns {string} escaped string
  */
 function filterInput(s) {
-	return encodeURIComponent(s).replace(/['()_*]/g, function (character) {
-		return "%" + character.charCodeAt().toString(16);
-	});
+  return encodeURIComponent(s).replace(/['()_*]/g, function (character) {
+    return "%" + character.charCodeAt().toString(16);
+  });
 }
 
 function convertUnits(val, dpi = 203, from = "pixel") {
-	switch (from.toLowerCase()) {
-		case "pixel":
-			return (dpi * val) / (PIXEL_PER_MM * 25.4);
-		case "mm":
-			return (dpi * val) / INCH_PER_MM;
-		case "inch":
-			return dpi * val;
-		case "dots":
-			return val;
-		case "font":
-			return val * FONT_POINT_SIZE_INCH * dpi;
-		default:
-			throw `Unit ${from} is not supported`;
-	}
+  switch (from.toLowerCase()) {
+    case "pixel":
+      return (dpi * val) / (PIXEL_PER_MM * 25.4);
+    case "mm":
+      return (dpi * val) / INCH_PER_MM;
+    case "inch":
+      return dpi * val;
+    case "dots":
+      return val;
+    case "font":
+      throw "Font units are deprecated";
+      return val * FONT_POINT_SIZE_INCH * dpi;
+    default:
+      throw `Unit ${from} is not supported`;
+  }
 }
 
 function getRot(rot) {
-	switch (rot.toString()) {
-		case "0":
-			return "N";
-		case "1":
-			return "R";
-		case "2":
-			return "I";
-		case "3":
-			return "B";
-		default:
-			throw `Invalid rotation "${rot}"`;
-	}
+  switch (rot.toString()) {
+    case "0":
+      return "N";
+    case "1":
+      return "R";
+    case "2":
+      return "I";
+    case "3":
+      return "B";
+    default:
+      throw `Invalid rotation "${rot}"`;
+  }
 }
 
 /**
@@ -117,26 +118,33 @@ function getRot(rot) {
  * @returns {string} ZPL code for a text object
  */
 function buildField(input, prop, dpi, units) {
-	if (!(prop.left !== undefined && prop.top !== undefined)) {
-		throw "Job data is missing required attributes in Text field";
-	}
+  if (
+    prop.left === undefined ||
+    prop.top === undefined ||
+    prop.fontSize === undefined
+  ) {
+    console.log(prop);
+    throw "Job data is missing required attributes in Text field";
+  }
 
-	const font = prop.fontStyle !== undefined ? prop.fontStyle : "";
-	const fontSX = (fontSY =
-		prop.fontSize !== undefined
-			? convertUnits(prop.fontSize, dpi, "font")
-			: "");
-	const rotation = prop.rotation !== undefined ? getRot(prop.rotation) : "";
+  const font = prop.font !== undefined ? prop.font : "Arial";
+  const fontSize = prop.fontSize;
+  const rotation = prop.rotation !== undefined ? getRot(prop.rotation) : "";
 
-	const left = convertUnits(prop.left, dpi, units);
-	const top = convertUnits(prop.top, dpi, units);
+  const left = convertUnits(prop.left, dpi, units);
+  const top = convertUnits(prop.top, dpi, units);
 
-	return `
+  return `
+  <text x="${left}" y="${top}" font-size="${fontSize}" font-family="${font}">${
+    prop.label !== undefined ? prop.label + " " + input : input
+  }</text>
+  `;
+  return `
         ^FO${left},${top}^A${
-		font + rotation
-	},${fontSX},${fontSY}^FH%^FD${filterInput(
-		prop.label !== undefined ? prop.label + " " + input : input
-	)}^FS\n`;
+    font + rotation
+  },${fontSX},${fontSY}^FH%^FD${filterInput(
+    prop.label !== undefined ? prop.label + " " + input : input
+  )}^FS\n`;
 }
 
 /**
@@ -148,37 +156,38 @@ function buildField(input, prop, dpi, units) {
  * @returns {string} ZPL code for barcode
  */
 function buildBarcode(input, prop, dpi, units) {
-	prop.width = 0;
-	if (
-		!(
-			prop.left !== undefined &&
-			prop.top !== undefined &&
-			prop.height !== undefined &&
-			prop.width !== undefined
-		)
-	) {
-		throw "Job data is missing required attributes in Barcode";
-	}
+  prop.width = 0;
+  if (
+    !(
+      prop.left !== undefined &&
+      prop.top !== undefined &&
+      prop.height !== undefined &&
+      prop.width !== undefined
+    )
+  ) {
+    throw "Job data is missing required attributes in Barcode";
+  }
 
-	//Constants for barcode proportions
-	const TOTAL_WIDTH_TO_BARCODE_WIDTH = 0.840764331;
-	const WIDTH_TO_MODULE_WIDTH = 0.010526316;
-	const TOTAL_WIDTH_LEFT_QUIET_ZONE = 0.097217566;
+  //Constants for barcode proportions
+  const TOTAL_WIDTH_TO_BARCODE_WIDTH = 0.840764331;
+  const WIDTH_TO_MODULE_WIDTH = 0.010526316;
+  const TOTAL_WIDTH_LEFT_QUIET_ZONE = 0.097217566;
 
-	const left = convertUnits(prop.left, dpi, units);
-	const top = convertUnits(prop.top, dpi, units);
-	const height = convertUnits(prop.height, dpi, units);
-	const rotation = prop.rotation !== undefined ? getRot(prop.rotation) : "";
+  const left = convertUnits(prop.left, dpi, units);
+  const top = convertUnits(prop.top, dpi, units);
+  const height = convertUnits(prop.height, dpi, units);
+  const rotation = prop.rotation !== undefined ? getRot(prop.rotation) : "";
 
-	const totalWidth = convertUnits(prop.width, dpi, units);
-	const barcodeWidth = TOTAL_WIDTH_TO_BARCODE_WIDTH * totalWidth;
-	const moduleWidth = WIDTH_TO_MODULE_WIDTH * barcodeWidth;
-	const leftOffset = TOTAL_WIDTH_LEFT_QUIET_ZONE * totalWidth;
+  const totalWidth = convertUnits(prop.width, dpi, units);
+  const barcodeWidth = TOTAL_WIDTH_TO_BARCODE_WIDTH * totalWidth;
+  const moduleWidth = WIDTH_TO_MODULE_WIDTH * barcodeWidth;
+  const leftOffset = TOTAL_WIDTH_LEFT_QUIET_ZONE * totalWidth;
 
-	return `
+  return ``;
+  return `
         ^FO${
-					left + leftOffset
-				},${top}^BY${2},,^BE${rotation},${height},Y,N^FD${input}^FS\n`;
+          left + leftOffset
+        },${top}^BY${2},,^BE${rotation},${height},Y,N^FD${input}^FS\n`;
 }
 
 /**
@@ -190,47 +199,47 @@ function buildBarcode(input, prop, dpi, units) {
  * @returns {string} ZPL code for image
  */
 function buildImage(prop, img, dpi, units) {
-	if (!(prop.left !== undefined && prop.top !== undefined)) {
-		throw "Job data is missing required attributes in Image";
-	}
+  if (!(prop.left !== undefined && prop.top !== undefined)) {
+    throw "Job data is missing required attributes in Image";
+  }
 
-	if (prop.width && prop.height) {
-		img.resize(
-			//Is not constant, made an exception for efficiency
-			parseInt(convertUnits(prop.width, dpi, units)),
-			parseInt(convertUnits(prop.height, dpi, units)) * 4,
-			jimp.RESIZE_NEAREST_NEIGHBOR
-		);
-	}
+  if (prop.width && prop.height) {
+    img.resize(
+      //Is not constant, made an exception for efficiency
+      parseInt(convertUnits(prop.width, dpi, units)),
+      parseInt(convertUnits(prop.height, dpi, units)) * 4,
+      jimp.RESIZE_NEAREST_NEIGHBOR
+    );
+  }
 
-	img.greyscale();
-	const left = convertUnits(prop.left, dpi, units);
-	const top = convertUnits(prop.top, dpi, units);
-	const width = img.bitmap.width;
-	const height = img.bitmap.height;
-	const rgbaData = [...img.bitmap.data];
+  img.greyscale();
+  const left = convertUnits(prop.left, dpi, units);
+  const top = convertUnits(prop.top, dpi, units);
+  const width = img.bitmap.width;
+  const height = img.bitmap.height;
+  const rgbaData = [...img.bitmap.data];
 
-	const f = (pixel, i) => {
-		//Convert each greyscale value to hex
-		const out = Math.round((15 * pixel) / 255).toString(16);
-		if (width % 2 !== 0 && (i + 1) % width === 0) {
-			//Pad odd sized images
-			return "00";
-		}
-		return out; //Scale from 0-255 to 0-15 then convert to hex
-	};
+  const f = (pixel, i) => {
+    //Convert each greyscale value to hex
+    const out = Math.round((15 * pixel) / 255).toString(16);
+    if (width % 2 !== 0 && (i + 1) % width === 0) {
+      //Pad odd sized images
+      return "00";
+    }
+    return out; //Scale from 0-255 to 0-15 then convert to hex
+  };
 
-	//Take every 4th value as the sequence goes rgbargbargb...
-	//Since is greyscaled we only need either r, g or b
-	const data = rgbaData
-		.filter((_, index) => index % 4 == 0)
-		.map(f)
-		.reduce((acc, x) => acc + x, "");
+  //Take every 4th value as the sequence goes rgbargbargb...
+  //Since is greyscaled we only need either r, g or b
+  const data = rgbaData
+    .filter((_, index) => index % 4 == 0)
+    .map(f)
+    .reduce((acc, x) => acc + x, "");
 
-	return `
+  return `
         ^FO${left},${top}^GFA,${Math.ceil((width * height) / 2)},${Math.ceil(
-		(width * height) / 2
-	)},${Math.ceil(width / 2)},${data}`;
+    (width * height) / 2
+  )},${Math.ceil(width / 2)},${data}`;
 }
 
 /**
@@ -243,21 +252,21 @@ function buildImage(prop, img, dpi, units) {
  * @returns {string} ZPL code for an object
  */
 function buildProp(input, prop, images, dpi, units) {
-	switch (prop.transformType) {
-		case "barcode":
-			return buildBarcode(input, prop, dpi, units);
-		case "field":
-			return buildField(input, prop, dpi, units);
-		case "image":
-			return buildImage(
-				prop,
-				images.find((x) => x.link == input).data.clone(),
-				dpi,
-				units
-			);
-		default:
-			throw "Property not recognised";
-	}
+  switch (prop.transformType) {
+    case "barcode":
+      return buildBarcode(input, prop, dpi, units);
+    case "field":
+      return buildField(input, prop, dpi, units);
+    case "image":
+      return buildImage(
+        prop,
+        images.find((x) => x.link == input).data.clone(),
+        dpi,
+        units
+      );
+    default:
+      throw "Property not recognised";
+  }
 }
 
 /**
@@ -271,19 +280,30 @@ function buildProp(input, prop, images, dpi, units) {
  * @returns {string} Combined ZPL code to build the job
  */
 function buildJob(items, page, props, images, defaultFont, dpi, units) {
-	//this function will be mapped across items
-	const f = (item) => {
-		const [name, input] = item;
-		if (name == "qty") return "";
-		return buildProp(
-			input,
-			props[Object.keys(props).find((x) => x === name)],
-			images,
-			dpi,
-			units
-		);
-	};
+  //this function will be mapped across items
+  const f = (item) => {
+    const [name, input] = item;
+    if (name == "qty") return "";
+    return buildProp(
+      input,
+      props[Object.keys(props).find((x) => x === name)],
+      images,
+      dpi,
+      units
+    );
+  };
 
+  return (
+    `<svg height="1in" width="2in">
+` +
+    Object.entries(items) //Convert items to an array of key value pairs
+      .map(f)
+      .reduce((acc, x) => acc + x, "") + //Reduce all the different objects to a string
+    `
+</svg>`
+  );
+
+  /* ZPL
 	return (
 		`^XA
   ^LH${Math.floor(convertUnits(page.leftMargin, dpi, units))},${Math.floor(
@@ -299,17 +319,18 @@ function buildJob(items, page, props, images, defaultFont, dpi, units) {
 		`
         ^XZ`
 	);
+	*/
 }
 
 function addAuthToURL(url) {
-	const [user, pass] = [process.env.USER, process.env.pass];
+  const [user, pass] = [process.env.USER, process.env.pass];
 
-	if (url.includes("https")) {
-		const splitUrl = url.split("https://");
-		return "https://" + `${user}:${pass}@` + splitUrl[1];
-	} else {
-		throw "Image url not in ilevel domain";
-	}
+  if (url.includes("https")) {
+    const splitUrl = url.split("https://");
+    return "https://" + `${user}:${pass}@` + splitUrl[1];
+  } else {
+    throw "Image url not in ilevel domain";
+  }
 }
 
 /**
@@ -318,35 +339,35 @@ function addAuthToURL(url) {
  * @returns {[Promise<{link: string, data: jimp}>]} array of promises which contain the image data in the format of {link: data, data: data}
  */
 function cacheImages(items) {
-	//f will be mapped acrossed items
-	const f = (item) => {
-		//Get the name and input of each item
-		let output = [];
-		const [_, value] = item;
-		if (value.transformType == "image") {
-			return new Promise((resolve, reject) => {
-				axios
-					.get(value.imageUrl, { responseType: "arraybuffer" })
-					.then((imageBuffer) => {
-						jimp
-							.read(imageBuffer.data)
-							.then((data) => {
-								resolve({ link: value.imageUrl, data: data });
-							})
-							.catch((err) => {
-								reject(err);
-							});
-					})
-					.catch((err) => {
-						reject(err);
-					});
-			});
-		}
-		return null;
-	};
-	return Object.entries(items)
-		.map(f)
-		.filter((x) => x !== null); //Remove any nulls from non-images
+  //f will be mapped acrossed items
+  const f = (item) => {
+    //Get the name and input of each item
+    let output = [];
+    const [_, value] = item;
+    if (value.transformType == "image") {
+      return new Promise((resolve, reject) => {
+        axios
+          .get(value.imageUrl, { responseType: "arraybuffer" })
+          .then((imageBuffer) => {
+            jimp
+              .read(imageBuffer.data)
+              .then((data) => {
+                resolve({ link: value.imageUrl, data: data });
+              })
+              .catch((err) => {
+                reject(err);
+              });
+          })
+          .catch((err) => {
+            reject(err);
+          });
+      });
+    }
+    return null;
+  };
+  return Object.entries(items)
+    .map(f)
+    .filter((x) => x !== null); //Remove any nulls from non-images
 }
 
 /**
@@ -357,25 +378,25 @@ function cacheImages(items) {
  * @param {String} units inch, mm, pixel, font
  */
 function build(jobData, itemData, dpi, units) {
-	return new Promise((resolve, reject) => {
-		Promise.all(cacheImages(jobData.properties))
-			.then((images) => {
-				resolve(
-					buildJob(
-						itemData.detail,
-						jobData.page,
-						jobData.properties,
-						images,
-						jobData.format.defaultFont,
-						dpi,
-						units
-					)
-				);
-			})
-			.catch((err) => {
-				reject(err);
-			});
-	});
+  return new Promise((resolve, reject) => {
+    Promise.all(cacheImages(jobData.properties))
+      .then((images) => {
+        resolve(
+          buildJob(
+            itemData.detail,
+            jobData.page,
+            jobData.properties,
+            images,
+            jobData.format.defaultFont,
+            dpi,
+            units
+          )
+        );
+      })
+      .catch((err) => {
+        reject(err);
+      });
+  });
 }
 
 module.exports.build = build;

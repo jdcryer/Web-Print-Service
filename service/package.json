@@ -20,21 +20,24 @@
   },
   "homepage": "https://github.com/SamGuard/Web-Print-Service#readme",
   "dependencies": {
-    "@thiagoelg/node-printer": "^0.5.5",
+    "@thiagoelg/node-printer": "^0.5.8",
     "axios": "^0.21.4",
     "canvas": "^2.9.1",
     "dotenv": "^10.0.0",
-    "express": "^4.17.1",
+    "express": "^4.18.1",
     "jimp": "^0.16.1",
+    "pdf-to-printer": "^5.3.0",
+    "pdfkit": "^0.13.0",
     "request": "^2.88.2",
+    "svg-to-pdfkit": "^0.1.8",
     "symbology": "^3.0.8"
   },
   "devDependencies": {
-    "chai": "^4.3.4",
+    "chai": "^4.3.6",
     "chai-as-promised": "^7.1.1",
-    "mocha": "^9.0.2",
-    "nodemon": "^2.0.12",
-    "pkg": "^5.3.0"
+    "mocha": "^9.2.2",
+    "nodemon": "^2.0.16",
+    "pkg": "^5.7.0"
   },
   "pkg": {
     "assets": "",
