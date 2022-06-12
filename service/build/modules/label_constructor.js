@@ -1,5 +1,7 @@
 const jimp = require("jimp");
 const axios = require("axios");
+const symbology = require("symbology");
+
 const PIXEL_PER_MM = 140 / 50;
 const INCH_PER_MM = 1 / 25.4;
 const FONT_POINT_SIZE_INCH = 1 / 72;
@@ -139,12 +141,6 @@ function buildField(input, prop, dpi, units) {
     prop.label !== undefined ? prop.label + " " + input : input
   }</text>
   `;
-  return `
-        ^FO${left},${top}^A${
-    font + rotation
-  },${fontSX},${fontSY}^FH%^FD${filterInput(
-    prop.label !== undefined ? prop.label + " " + input : input
-  )}^FS\n`;
 }
 
 /**
@@ -168,26 +164,30 @@ function buildBarcode(input, prop, dpi, units) {
     throw "Job data is missing required attributes in Barcode";
   }
 
-  //Constants for barcode proportions
-  const TOTAL_WIDTH_TO_BARCODE_WIDTH = 0.840764331;
-  const WIDTH_TO_MODULE_WIDTH = 0.010526316;
-  const TOTAL_WIDTH_LEFT_QUIET_ZONE = 0.097217566;
-
   const left = convertUnits(prop.left, dpi, units);
   const top = convertUnits(prop.top, dpi, units);
   const height = convertUnits(prop.height, dpi, units);
   const rotation = prop.rotation !== undefined ? getRot(prop.rotation) : "";
 
-  const totalWidth = convertUnits(prop.width, dpi, units);
-  const barcodeWidth = TOTAL_WIDTH_TO_BARCODE_WIDTH * totalWidth;
-  const moduleWidth = WIDTH_TO_MODULE_WIDTH * barcodeWidth;
-  const leftOffset = TOTAL_WIDTH_LEFT_QUIET_ZONE * totalWidth;
-
-  return ``;
-  return `
-        ^FO${
-          left + leftOffset
-        },${top}^BY${2},,^BE${rotation},${height},Y,N^FD${input}^FS\n`;
+  // Return promise that will create a createStream from symbology
+  return new Promise((resolve, reject) => {
+    symbology
+      .createStream(
+        {
+          symbology: symbology.SymbologyType.EANX,
+          encoding: symbology.EncodingMode.DATA_MODE,
+          height: height,
+        },
+        input,
+        symbology.OutputType.SVG
+      )
+      .then((res) => {
+        resolve(`<g transform="translate(${left}, ${top})">
+          ${res.data}
+        </g>`);
+      })
+      .catch(reject);
+  });
 }
 
 /**
@@ -236,6 +236,7 @@ function buildImage(prop, img, dpi, units) {
     .map(f)
     .reduce((acc, x) => acc + x, "");
 
+  return ``;
   return `
         ^FO${left},${top}^GFA,${Math.ceil((width * height) / 2)},${Math.ceil(
     (width * height) / 2
@@ -293,33 +294,29 @@ function buildJob(items, page, props, images, defaultFont, dpi, units) {
     );
   };
 
-  return (
-    `<svg height="1in" width="2in">
-` +
-    Object.entries(items) //Convert items to an array of key value pairs
-      .map(f)
-      .reduce((acc, x) => acc + x, "") + //Reduce all the different objects to a string
-    `
-</svg>`
-  );
-
-  /* ZPL
-	return (
-		`^XA
-  ^LH${Math.floor(convertUnits(page.leftMargin, dpi, units))},${Math.floor(
-			convertUnits(page.topMargin, dpi, units)
-		)}
-  ^PQ${items.qty}
-  ^CI28
-  ^CF${defaultFont.font},${defaultFont.size},${defaultFont.size}
-  ` +
-		Object.entries(items) //Convert items to an array of key value pairs
-			.map(f)
-			.reduce((acc, x) => acc + x, "") + //Reduce all the different objects to a string
-		`
-        ^XZ`
-	);
-	*/
+  // Array of texts and promises
+  const proms = Object.entries(items) //Convert items to an array of key value pairs
+    .map(f);
+  // Wait on all promises to resolve
+  return new Promise((resolve, reject) => {
+    Promise.all(proms)
+      .then((texts) => {
+        resolve(
+          `<svg height="1in" width="2in">
+          <g transform="translate(${convertUnits(
+            page.leftMargin,
+            dpi,
+            units
+          )},${convertUnits(page.topMargin, dpi, units)})">
+          ` +
+            texts.reduce((acc, x) => acc + x, "") + //Reduce all the different objects to a string
+            `
+            </g>
+            </svg>`
+        );
+      })
+      .catch(reject);
+  });
 }
 
 function addAuthToURL(url) {
@@ -329,7 +326,7 @@ function addAuthToURL(url) {
     const splitUrl = url.split("https://");
     return "https://" + `${user}:${pass}@` + splitUrl[1];
   } else {
-    throw "Image url not in ilevel domain";
+    throw "Url must be https";
   }
 }
 
@@ -354,13 +351,9 @@ function cacheImages(items) {
               .then((data) => {
                 resolve({ link: value.imageUrl, data: data });
               })
-              .catch((err) => {
-                reject(err);
-              });
+              .catch(reject);
           })
-          .catch((err) => {
-            reject(err);
-          });
+          .catch(reject);
       });
     }
     return null;
@@ -381,21 +374,19 @@ function build(jobData, itemData, dpi, units) {
   return new Promise((resolve, reject) => {
     Promise.all(cacheImages(jobData.properties))
       .then((images) => {
-        resolve(
-          buildJob(
-            itemData.detail,
-            jobData.page,
-            jobData.properties,
-            images,
-            jobData.format.defaultFont,
-            dpi,
-            units
-          )
-        );
+        buildJob(
+          itemData.detail,
+          jobData.page,
+          jobData.properties,
+          images,
+          jobData.format.defaultFont,
+          dpi,
+          units
+        )
+          .then(resolve)
+          .catch(reject);
       })
-      .catch((err) => {
-        reject(err);
-      });
+      .catch(reject);
   });
 }
 

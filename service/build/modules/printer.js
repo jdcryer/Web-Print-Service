@@ -78,7 +78,6 @@ class PrinterConnector {
         );
         return;
       }
-      console.log(data);
       if (process.platform === "win32") {
         print("output.pdf", {
           printer: printerName,

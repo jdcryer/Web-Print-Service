@@ -117,4 +117,4 @@ output.txt
 output.svg
 printer-config.json
 user-profile.json
-
+*.pdf

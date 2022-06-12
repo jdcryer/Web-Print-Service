@@ -212,7 +212,7 @@ class Api {
                 const svg = await build(
                   jobArray[i].job,
                   jobArray[i].items[j],
-                  203,
+                  72,
                   "pixel"
                 );
                 fs.writeFileSync("output.svg", svg);
@@ -235,15 +235,16 @@ class Api {
 
                 const pdfData = fs.readFileSync("./output.pdf", "utf8");
                 try {
-                  const printSuccess = await this.printerConn.sendPrint(
-                    this.printerConn.getPrinterById(jobArray[i].job.fk_printer)
-                      .name,
-                    pdfData,
-                    ""
-                  );
-                  console.log("Sent to print");
+                  if (true) {
+                    const printSuccess = await this.printerConn.sendPrint(
+                      this.printerConn.getPrinterById(
+                        jobArray[i].job.fk_printer
+                      ).name,
+                      pdfData,
+                      ""
+                    );
+                  }
                   const z = await this.deleteJobAsync(jobArray[i].job.id);
-                  console.log("Deleted job");
                 } catch (err) {
                   console.log(
                     `Failed job ${jobArray[i].job.id}.
