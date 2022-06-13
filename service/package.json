@@ -30,7 +30,8 @@
     "pdfkit": "^0.13.0",
     "request": "^2.88.2",
     "svg-to-pdfkit": "^0.1.8",
-    "symbology": "^3.0.8"
+    "symbology": "^3.0.8",
+    "unix-print": "^1.1.0"
   },
   "devDependencies": {
     "chai": "^4.3.6",

@@ -1,6 +1,10 @@
 const printerHandler = require("@thiagoelg/node-printer");
 const fs = require("fs");
-const { print } = require("pdf-to-printer");
+const { print } =
+  process.platform === "win32"
+    ? require("pdf-to-printer")
+    : require("unix-print");
+
 const PRINT_CONFIG_PATH = process.cwd() + "/printer-config.json";
 const EDITABLE_ATTRIBUTES = ["displayName", "acceptedTypes", "enabled"];
 
@@ -86,6 +90,10 @@ class PrinterConnector {
           .then(resolve)
           .catch(console.log);
       } else {
+        print("output.pdf", printerName, ["-o portrait"])
+          .then(resolve)
+          .catch(console.log);
+        /*
         printerHandler.printDirect({
           data: data,
           type: "RAW",
@@ -96,14 +104,13 @@ class PrinterConnector {
           error: function (err) {
             reject(err.message);
           },
-        });
+        });*/
       }
     });
   }
 
   addPrinter(name, id, displayName) {
     const index = this.getConfig().findIndex((x) => x.name === name);
-
     if (index === -1) {
       console.error(`Could not match printer name "${name}" to a printer`);
       return false;
