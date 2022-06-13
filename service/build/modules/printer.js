@@ -1,6 +1,5 @@
 const printerHandler = require("@thiagoelg/node-printer");
 const fs = require("fs");
-const { config } = require("process");
 const { print } = require("pdf-to-printer");
 const PRINT_CONFIG_PATH = process.cwd() + "/printer-config.json";
 const EDITABLE_ATTRIBUTES = ["displayName", "acceptedTypes", "enabled"];
@@ -12,7 +11,7 @@ class PrinterConnector {
       fs.statSync(PRINT_CONFIG_PATH);
       this.config = JSON.parse(fs.readFileSync(PRINT_CONFIG_PATH, "utf-8"));
     } catch (err) {
-      fs.writeFileSync(PRINT_CONFIG_PATH, JSON.stringify(config));
+      fs.writeFileSync(PRINT_CONFIG_PATH, JSON.stringify(this.config));
     }
   }
 
@@ -32,7 +31,7 @@ class PrinterConnector {
         shareName: printer.shareName,
         statusNumber: printer.statusNumber,
         online:
-          printer.attributes.find((x) => x == "OFFLINE") != undefined
+          printer?.attributes?.find((x) => x == "OFFLINE") != undefined
             ? false
             : true,
       };
