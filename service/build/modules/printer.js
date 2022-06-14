@@ -96,7 +96,9 @@ class PrinterConnector {
         return;
       }
       if (process.platform === "win32") {
-        execute(`${PRINT_WRAPPER_PATH} output.pdf "${printerName}" copies=1`)
+        execute(
+          `${PRINT_WRAPPER_PATH} output.pdf "${printerName}" copies=${copies}`
+        )
           .then(resolve)
           .catch((e) => console.log(e.error));
       } else {

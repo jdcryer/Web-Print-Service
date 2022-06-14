@@ -86,7 +86,7 @@ function filterInput(s) {
 }
 
 function convertUnits(val) {
-  return val / 0.7;
+  return val / 0.72; // Converts points (1/72 inches) to mm (144/200 = 0.72)
 }
 function convertUnitsOld(val, dpi = 203, from = "pixel") {
   switch (from.toLowerCase()) {
@@ -311,6 +311,7 @@ function buildJob(items, page, props, images, defaultFont, dpi, units) {
   return new Promise((resolve, reject) => {
     Promise.all(proms)
       .then((texts) => {
+        // TODO: set total size of label to be connected to job definition
         resolve(
           `<svg height="1in" width="2in">
           <g transform="translate(${convertUnits(
