@@ -76,7 +76,7 @@ class PrinterConnector {
     return printersConfig;
   }
 
-  sendPrint(printerName, data, printType) {
+  sendPrint(printerName, data, printType, copies = 1) {
     return new Promise((resolve, reject) => {
       let p = this.#getPrinterConfig(printerName);
       if (p == undefined) {
@@ -96,7 +96,7 @@ class PrinterConnector {
         return;
       }
       if (process.platform === "win32") {
-        execute(`${PRINT_WRAPPER_PATH} output.pdf "${printerName}"`)
+        execute(`${PRINT_WRAPPER_PATH} output.pdf "${printerName}" copies=1`)
           .then(resolve)
           .catch((e) => console.log(e.error));
       } else {

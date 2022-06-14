@@ -74,13 +74,21 @@ Z - Only one command, ZZ puts the printer to sleep:)
  * @param {string} s
  * @returns {string} escaped string
  */
+
+function getBarcodeWidth(b) {
+  let regex = new RegExp(`svg width="(.+?)"`);
+  return parseFloat(regex.exec(b)[1]);
+}
 function filterInput(s) {
   return encodeURIComponent(s).replace(/['()_*]/g, function (character) {
     return "%" + character.charCodeAt().toString(16);
   });
 }
 
-function convertUnits(val, dpi = 203, from = "pixel") {
+function convertUnits(val) {
+  return val / 0.7;
+}
+function convertUnitsOld(val, dpi = 203, from = "pixel") {
   switch (from.toLowerCase()) {
     case "pixel":
       return (dpi * val) / (PIXEL_PER_MM * 25.4);
@@ -130,14 +138,14 @@ function buildField(input, prop, dpi, units) {
   }
 
   const font = prop.font !== undefined ? prop.font : "Arial";
-  const fontSize = prop.fontSize;
+  const fontSize = convertUnits(prop.fontSize);
   const rotation = prop.rotation !== undefined ? getRot(prop.rotation) : "";
 
-  const left = convertUnits(prop.left, dpi, units);
-  const top = convertUnits(prop.top, dpi, units);
+  const left = convertUnits(prop.left);
+  const top = convertUnits(prop.top);
 
   return `
-  <text x="${left}" y="${top}" font-size="${fontSize}" font-family="${font}">${
+  <text dominant-baseline="hanging" x="${left}" y="${top}" font-size="${fontSize}" font-family="${font}">${
     prop.label !== undefined ? prop.label + " " + input : input
   }</text>
   `;
@@ -152,7 +160,6 @@ function buildField(input, prop, dpi, units) {
  * @returns {string} ZPL code for barcode
  */
 function buildBarcode(input, prop, dpi, units) {
-  prop.width = 0;
   if (
     !(
       prop.left !== undefined &&
@@ -164,9 +171,10 @@ function buildBarcode(input, prop, dpi, units) {
     throw "Job data is missing required attributes in Barcode";
   }
 
-  const left = convertUnits(prop.left, dpi, units);
-  const top = convertUnits(prop.top, dpi, units);
-  const height = convertUnits(prop.height, dpi, units);
+  const left = convertUnits(prop.left);
+  const top = convertUnits(prop.top);
+  const height = prop.height;
+  const width = convertUnits(prop.width);
   const rotation = prop.rotation !== undefined ? getRot(prop.rotation) : "";
 
   // Return promise that will create a createStream from symbology
@@ -182,7 +190,9 @@ function buildBarcode(input, prop, dpi, units) {
         symbology.OutputType.SVG
       )
       .then((res) => {
-        resolve(`<g transform="translate(${left}, ${top})">
+        let barcodeWidth = getBarcodeWidth(res.data);
+        let widthScale = width / barcodeWidth;
+        resolve(`<g transform="translate(${left}, ${top}) scale(${widthScale})">
           ${res.data}
         </g>`);
       })
@@ -206,15 +216,15 @@ function buildImage(prop, img, dpi, units) {
   if (prop.width && prop.height) {
     img.resize(
       //Is not constant, made an exception for efficiency
-      parseInt(convertUnits(prop.width, dpi, units)),
-      parseInt(convertUnits(prop.height, dpi, units)) * 4,
+      prop.width,
+      prop.height * 4,
       jimp.RESIZE_NEAREST_NEIGHBOR
     );
   }
 
   img.greyscale();
-  const left = convertUnits(prop.left, dpi, units);
-  const top = convertUnits(prop.top, dpi, units);
+  const left = prop.left;
+  const top = prop.top;
   const width = img.bitmap.width;
   const height = img.bitmap.height;
   const rgbaData = [...img.bitmap.data];
@@ -304,10 +314,8 @@ function buildJob(items, page, props, images, defaultFont, dpi, units) {
         resolve(
           `<svg height="1in" width="2in">
           <g transform="translate(${convertUnits(
-            page.leftMargin,
-            dpi,
-            units
-          )},${convertUnits(page.topMargin, dpi, units)})">
+            page.leftMargin
+          )},${convertUnits(page.topMargin)})">
           ` +
             texts.reduce((acc, x) => acc + x, "") + //Reduce all the different objects to a string
             `
