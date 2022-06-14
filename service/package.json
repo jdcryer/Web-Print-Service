@@ -25,7 +25,6 @@
     "dotenv": "^10.0.0",
     "express": "^4.18.1",
     "jimp": "^0.16.1",
-    "pdf-to-printer": "^5.3.0",
     "pdfkit": "^0.13.0",
     "request": "^2.88.2",
     "svg-to-pdfkit": "^0.1.8",
@@ -40,7 +39,7 @@
     "pkg": "^5.7.0"
   },
   "pkg": {
-    "assets": "",
+    "assets": "static/",
     "scripts": [
       "build/**/*.js",
       "node_modules/@thiagoelg/node-printer/lib/node_printer.node"

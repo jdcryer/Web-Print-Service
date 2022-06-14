@@ -1,12 +1,26 @@
 const printerHandler = require("@thiagoelg/node-printer");
 const fs = require("fs");
-const { print } =
-  process.platform === "win32"
-    ? require("pdf-to-printer")
-    : require("unix-print");
+const { print } = require("unix-print");
+
+const { exec } = require("child_process");
+
+/**
+ *
+ * @param {String} command
+ * @return {Promise}
+ */
+function execute(command) {
+  return new Promise((resolve, reject) => {
+    exec(command, (error, stdout, stderr) => {
+      if (error) reject({ error, stderr });
+      resolve({ stdout });
+    });
+  });
+}
 
 const PRINT_CONFIG_PATH = process.cwd() + "/printer-config.json";
 const EDITABLE_ATTRIBUTES = ["displayName", "acceptedTypes", "enabled"];
+const PRINT_WRAPPER_PATH = `"${process.cwd()}\\static\\PDFtoPrinter.exe"`;
 
 class PrinterConnector {
   constructor() {
@@ -82,29 +96,13 @@ class PrinterConnector {
         return;
       }
       if (process.platform === "win32") {
-        print("output.pdf", {
-          printer: printerName,
-          scale: "noscale",
-          orientation: "landscape",
-        })
+        execute(`${PRINT_WRAPPER_PATH} output.pdf "${printerName}"`)
           .then(resolve)
-          .catch(console.log);
+          .catch((e) => console.log(e.error));
       } else {
         print("output.pdf", printerName, ["-o portrait"])
           .then(resolve)
           .catch(console.log);
-        /*
-        printerHandler.printDirect({
-          data: data,
-          type: "RAW",
-          printer: printerName,
-          success: function (jobId) {
-            resolve({ success: true, jobId: jobId });
-          },
-          error: function (err) {
-            reject(err.message);
-          },
-        });*/
       }
     });
   }
