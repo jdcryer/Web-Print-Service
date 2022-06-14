@@ -183,7 +183,7 @@ function buildBarcode(input, prop, dpi, units) {
       )
       .then((res) => {
         resolve(`<g transform="translate(${left}, ${top})">
-          ${res.data}
+          ${res.data.split("\n").slice(2).join("\n")}
         </g>`);
       })
       .catch(reject);
