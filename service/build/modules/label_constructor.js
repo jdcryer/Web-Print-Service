@@ -182,11 +182,11 @@ function buildBarcode(input, prop, dpi, units) {
     symbology
       .createStream(
         {
-          symbology: symbology.SymbologyType.EANX,
+          symbology: input.type, // Hopefully sending the correct ZINT enum codes, equivalent to symbology.SymbologyType.EANX
           encoding: symbology.EncodingMode.DATA_MODE,
           height: height,
         },
-        input,
+        input.value,
         symbology.OutputType.SVG
       )
       .then((res) => {

@@ -14,6 +14,7 @@ class Api {
     this.printerIds = printerIds;
     this.running = false;
     this.failures = 0;
+    this.pdfSpoolSize = 100;
   }
 
   updateDetails({ user, pass, baseUrl, printerIds }) {
@@ -177,6 +178,13 @@ class Api {
     }
   }
 
+  newPdfDoc = () => {
+    return new PDFDocument({
+      size: [72 * 2, 72 * 1], // TODO: needs to be in points (1/72 inches)
+      bufferPages: true,
+    });
+  };
+
   startPrintJobListener() {
     if (this.running) return;
     this.running = true;
@@ -207,51 +215,79 @@ class Api {
             }
 
             console.log(jobArray);
+
             for (let i = 0; i < jobArray.length; i++) {
+              let svgList = []; // create object list of { promise, quantity }
+
               for (let j = 0; j < jobArray[i].items.length; j++) {
-                const svg = await build(
-                  jobArray[i].job,
-                  jobArray[i].items[j],
-                  72,
-                  "pixel"
+                svgList.push(
+                  build(
+                    jobArray[i].job, //  TODO: width and height come in as points (1/72 inches)
+                    jobArray[i].items[j],
+                    72,
+                    "pixel"
+                  )
                 );
-                fs.writeFileSync("output.svg", svg);
+              }
 
-                const doc = new PDFDocument({ size: [72 * 2, 72 * 1] });
-                const pdfWriteStream = fs.createWriteStream("output.pdf");
-                doc.pipe(pdfWriteStream);
-                SVGtoPDF(doc, svg, 0, 0);
-                doc.end();
-                console.log(svg);
+              // replaces svgList with list of { SVG, quantity }
+              svgList = (await Promise.all(svgList)).map((x, j) => ({
+                svg: x,
+                qty: jobArray[i].items[j].detail.qty,
+              }));
 
-                //wait for pdf to be written to file
-                const streamWait = () => {
-                  return new Promise((resolve) => {
-                    pdfWriteStream.on("finish", resolve);
-                  });
-                };
+              let numLabels = svgList
+                .map((x) => x.qty)
+                .reduce((p, c) => p + c, 0);
 
-                await streamWait();
+              let doc = this.newPdfDoc();
+              let stream = fs.createWriteStream("output.pdf");
+              doc.pipe(stream);
+              let currentSvg = 0;
+              let jobSuccess = true;
+              let currentLabel = 0;
 
-                const pdfData = fs.readFileSync("./output.pdf", "utf8");
-                try {
-                  if (true) {
-                    const printSuccess = await this.printerConn.sendPrint(
+              while (currentLabel < numLabels) {
+                if (svgList[currentSvg].qty === 0) currentSvg++;
+
+                SVGtoPDF(doc, svgList[currentSvg].svg, 0, 0);
+                svgList[currentSvg].qty--;
+                doc.addPage();
+                doc.switchToPage((currentLabel % this.pdfSpoolSize) + 1);
+                currentLabel++;
+
+                if (
+                  currentLabel % this.pdfSpoolSize === 0 ||
+                  currentLabel === numLabels
+                ) {
+                  doc.end();
+                  await new Promise((r) => stream.on("finish", r));
+                  try {
+                    await this.printerConn.sendPrint(
                       this.printerConn.getPrinterById(
                         jobArray[i].job.fk_printer
                       ).name,
-                      pdfData,
+                      null,
                       ""
                     );
+                    if (currentLabel !== numLabels) {
+                      doc = this.newPdfDoc();
+                      stream = fs.createWriteStream("output.pdf");
+                      doc.pipe(stream);
+                    }
+                  } catch (err) {
+                    console.log(
+                      `Failed job ${jobArray[i].job.id}.
+                      Error: ${err}`
+                    );
+                    jobSuccess = false;
+                    break;
                   }
-                  const z = await this.deleteJobAsync(jobArray[i].job.id);
-                } catch (err) {
-                  console.log(
-                    `Failed job ${jobArray[i].job.id}.
-										Error: ${err}`
-                  );
                 }
               }
+              doc.end();
+
+              if (jobSuccess) await this.deleteJobAsync(jobArray[i].job.id);
             }
           })
           .catch((error) => console.error("error: ", error)),
