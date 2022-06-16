@@ -23,6 +23,7 @@
     "@thiagoelg/node-printer": "^0.5.8",
     "axios": "^0.21.4",
     "dotenv": "^10.0.0",
+    "es-get-iterator": "github:jcryer/es-get-iterator",
     "express": "^4.18.1",
     "jimp": "^0.16.1",
     "pdfkit": "^0.13.0",
@@ -39,14 +40,17 @@
     "pkg": "^5.7.0"
   },
   "pkg": {
-    "assets": "static/",
+    "assets": [
+      "static/",
+      "/node_modules/pdfkit/js/data/"
+    ],
     "scripts": [
       "build/**/*.js",
       "node_modules/@thiagoelg/node-printer/lib/node_printer.node"
     ],
     "targets": [
-      "node14-win-x64",
-      "node14-mac-x64"
+      "node16-win-x64",
+      "node16-mac-x64"
     ]
   },
   "nodemonConfig": {
