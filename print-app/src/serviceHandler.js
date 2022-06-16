@@ -1,5 +1,7 @@
 const { exec } = require("child_process");
 const fs = require("fs");
+const path = require("path");
+const os = require("os");
 
 //System definitions
 const SERVICE_NAME = "webprintservice";
@@ -164,6 +166,40 @@ function init(failedAttempts, attempts) {
   });
 }
 
+// Uninstall the service from tmp directory
+function finalUninstall() {
+  const wrapperExe = fs.readFileSync(SERVICE_WRAPPER_PATH_WIN);
+  const wrapperConfig = fs.readFileSync(
+    path.join(SERVICE_WRAPPER_PATH, "service-wrapper.xml")
+  );
+  fs.writeFileSync(path.join(os.tmpdir(), "service-wrapper.exe"), wrapperExe);
+  fs.writeFileSync(
+    path.join(os.tmpdir(), "service-wrapper.xml"),
+    wrapperConfig
+  );
+
+  exec(
+    "service-wrapper.exe stop",
+    { cwd: os.tmpdir() },
+    (error, stdout, stderr) => {
+      fs.writeFileSync(
+        path.join(os.tmpdir(), "log1.txt"),
+        JSON.stringify({ error, stdout, stderr })
+      );
+      exec(
+        "service-wrapper.exe uninstall",
+        { cwd: os.tmpdir() },
+        (error, stdout, stderr) => {
+          fs.writeFileSync(
+            path.join(os.tmpdir(), "log2.txt"),
+            JSON.stringify({ error, stdout, stderr })
+          );
+        }
+      );
+    }
+  );
+}
+
 /**
  * @param {String} from Can be either application, wrapper or error
  * @return {Promise}
@@ -183,6 +219,7 @@ function getLogs(from) {
 }
 
 module.exports.service = service;
+module.exports.finalUninstall = finalUninstall;
 module.exports.getLogs = getLogs;
 module.exports.getState = () => {
   return state;
@@ -191,3 +228,5 @@ module.exports.getState = () => {
 module.exports.SERVICE_WRAPPER_PATH = SERVICE_WRAPPER_PATH;
 
 module.exports.init = init;
+
+finalUninstall();

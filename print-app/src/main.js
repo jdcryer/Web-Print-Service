@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain, session } = require("electron");
+const path = require("path");
 
 if (require("electron-squirrel-startup")) {
   // eslint-disable-line global-require
@@ -14,7 +15,11 @@ function handleSquirrelEvent() {
   const os = require("os");
   const fs = require("fs");
   const path = require("path");
-  const { SERVICE_WRAPPER_PATH, service } = require("./serviceHandler");
+  const {
+    SERVICE_WRAPPER_PATH,
+    service,
+    finalUninstall,
+  } = require("./serviceHandler");
 
   const appFolder = path.resolve(process.execPath, "..");
   const rootAtomFolder = path.resolve(appFolder, "..");
@@ -37,6 +42,7 @@ function handleSquirrelEvent() {
     return spawn(updateDotExe, args);
   };
 
+  /*
   const spawnService = function () {
     const cmd = spawn("cmd", [
       `/K`,
@@ -61,6 +67,7 @@ function handleSquirrelEvent() {
       console.log(`child process exited with code ${code}`);
     });
   };
+  */
 
   const squirrelEvent = process.argv[1];
   switch (squirrelEvent) {
@@ -84,29 +91,9 @@ function handleSquirrelEvent() {
       // Remove desktop and start menu shortcuts
       spawnUpdate(["--removeShortcut", exeName]);
 
-      fs.readFile(
-        `${SERVICE_WRAPPER_PATH}\\service-wrapper.exe`,
-        (err, data) => {}
-      );
-      fs.writeFile(os.tmpdir() + "/service-wrapper.exe");
-      fs.writeFileSync(
-        os.tmpdir() + "/service-wrapper.xml",
-        fs.readFileSync(`${SERVICE_WRAPPER_PATH}\\service-wrapper.xml`)
-      );
+      finalUninstall();
 
-      service("start").then(() => {
-        fetch("localhost:3001/getPrinters")
-          .then(function (response) {
-            return response.text();
-          })
-          .then(function (text) {
-            fs.writeFile(os.tmpdir() + "/testresult.txt", text);
-          });
-      });
-
-      spawnService();
-
-      setTimeout(app.quit, 10000);
+      setTimeout(app.quit, 1000);
 
       return true;
 
@@ -159,7 +146,6 @@ if (!handleSquirrelEvent()) {
     serviceHandlerUpdateInt = setInterval(() => {
       event.reply("serviceHandlerState", getState());
     }, 200);
-    return;
     init(0, 0)
       .then((data) => {
         if (data.success) clearInterval(serviceHandlerUpdateInt);
