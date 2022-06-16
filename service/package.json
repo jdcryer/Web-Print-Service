@@ -49,8 +49,7 @@
       "node_modules/@thiagoelg/node-printer/lib/node_printer.node"
     ],
     "targets": [
-      "node16-win-x64",
-      "node16-mac-x64"
+      "node16-win-x64"
     ]
   },
   "nodemonConfig": {
