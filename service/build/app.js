@@ -190,21 +190,13 @@ app.put("/editPrinter", async (req, res, next) => {
 });
 
 app.delete("/uninstall", async (req, res, next) => {
-  const proms = [];
-  printer
+  const ids = printer
     .getConfig()
     .filter((x) => x.id !== undefined)
-    .map((x) => {
-      proms.push(apiInstance.deletePrinterAsync(x.id));
-    });
+    .map((x) => x.id);
 
-  Promise.all(proms)
-    .then((res) => {
-      res.send({ sucess: true });
-    })
-    .catch((err) => {
-      res.send({ success: false, error: err });
-    });
+  const removePrinters = await apiInstance.deletePrinterAsync(ids.join(","));
+  res.send(removePrinters);
 });
 
 app.post("/sendTestPrint", (req, res, next) => {

@@ -83,6 +83,7 @@
   "dependencies": {
     "@material-ui/core": "^4.12.3",
     "@material-ui/icons": "^4.11.2",
+    "axios": "^0.27.2",
     "clsx": "^1.1.1",
     "electron-forge": "^5.2.4",
     "electron-squirrel-startup": "^1.0.0",

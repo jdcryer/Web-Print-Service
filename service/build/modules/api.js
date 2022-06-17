@@ -106,7 +106,7 @@ class Api {
         type: type,
         public: isPublic,
       });
-      editPrinter(printerName, {
+      this.printerConn.editPrinter(printerName, {
         displayName: displayName,
         acceptedTypes: [type],
       });

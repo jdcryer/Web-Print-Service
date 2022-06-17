@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain, session } = require("electron");
 const path = require("path");
+const axios = require("axios");
 
 if (require("electron-squirrel-startup")) {
   // eslint-disable-line global-require
@@ -90,8 +91,15 @@ function handleSquirrelEvent() {
 
       // Remove desktop and start menu shortcuts
       spawnUpdate(["--removeShortcut", exeName]);
+      axios.delete("http://localhost:3001/uninstall").then((res) => {
+        if (res.success) {
+          finalUninstall();
+        } else {
+          // not sure we can stop squirrel from uninstalling here
+        }
+      });
 
-      finalUninstall();
+      //finalUninstall();
 
       setTimeout(app.quit, 10000);
 
