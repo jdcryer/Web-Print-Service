@@ -11,7 +11,10 @@ const isWin = process.platform === "win32";
 const SERVICE_WRAPPER_PATH = __dirname + "/static/service/";
 
 //Windows
-const SERVICE_WRAPPER_PATH_WIN = SERVICE_WRAPPER_PATH + `service-wrapper.exe`;
+const SERVICE_WRAPPER_PATH_WIN = `"${path.join(
+  SERVICE_WRAPPER_PATH,
+  "service-wrapper.exe"
+)}"`;
 const SERVICE_WRAPPER_LOG_PATH =
   SERVICE_WRAPPER_PATH + `service-wrapper.wrapper.log`;
 const SERVICE_APP_LOG_PATH = SERVICE_WRAPPER_PATH + `service-wrapper.out.log`;
@@ -111,7 +114,13 @@ function service(command) {
   return new Promise((resolve, reject) => {
     prom.then(({ error, stdout, stderr }) => {
       if (error) {
-        resolve({ success: false, error: stdout, dir: SERVICE_WRAPPER_PATH });
+        resolve({
+          success: false,
+          error: error,
+          stdout: stdout,
+          stderr: stderr,
+          dir: SERVICE_WRAPPER_PATH,
+        });
         return;
       }
       resolve({ success: true, data: postProcess(stdout) });
@@ -123,14 +132,13 @@ function init(failedAttempts, attempts) {
   if (failedAttempts > 5 || attempts > 20) {
     throw new Error("Too many failed attempts");
   }
-
   return new Promise((resolve, reject) => {
     state = "Initialising";
     //Check current status
     service("status").then((res) => {
       //If somehow this fails give up on installing/starting as theres something majorly wrong
       if (res.success == false) {
-        reject(new Error("Cannot access services"));
+        reject("Cannot access services");
         return;
       } else {
         //Check to see if installed
@@ -140,7 +148,7 @@ function init(failedAttempts, attempts) {
           service("install").then((data) => {
             if (data.success == true) {
               state = "Installed";
-              init();
+              init(failedAttempts, attempts);
             } else {
               reject(data);
             }
