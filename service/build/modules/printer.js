@@ -145,7 +145,7 @@ class PrinterConnector {
     }
     this.config[index].id = undefined;
     this.config[index].enabled = false;
-    saveConfig(this.config);
+    this.#saveConfig(this.config);
     return true;
   }
 

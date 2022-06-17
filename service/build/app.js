@@ -6,13 +6,12 @@ const app = express();
 const USER_PATH = process.cwd() + "/user-profile.json";
 //require("dotenv").config();
 
-const ids = printer
-  .getConfig()
-  .filter((x) => x.id !== undefined)
-  .map((x) => x.id);
 let apiInstance = new api({
   printerConnector: printer,
-  printerIds: ids, // needs to get this from printer-config.json
+  printerIds: printer
+    .getConfig()
+    .filter((x) => x.id !== undefined)
+    .map((x) => x.id), // needs to get this from printer-config.json
 });
 
 //Attempting to load user-profile.json
@@ -188,6 +187,24 @@ app.put("/editPrinter", async (req, res, next) => {
   } else {
     console.error(editPrinter.error);
   }
+});
+
+app.delete("/uninstall", async (req, res, next) => {
+  const proms = [];
+  printer
+    .getConfig()
+    .filter((x) => x.id !== undefined)
+    .map((x) => {
+      proms.push(apiInstance.deletePrinterAsync(x.id));
+    });
+
+  Promise.all(proms)
+    .then((res) => {
+      res.send({ sucess: true });
+    })
+    .catch((err) => {
+      res.send({ success: false, error: err });
+    });
 });
 
 app.post("/sendTestPrint", (req, res, next) => {
