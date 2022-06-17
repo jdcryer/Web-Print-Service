@@ -93,7 +93,7 @@ function handleSquirrelEvent() {
 
       finalUninstall();
 
-      setTimeout(app.quit, 1000);
+      setTimeout(app.quit, 10000);
 
       return true;
 

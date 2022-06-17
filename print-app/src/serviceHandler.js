@@ -1,4 +1,4 @@
-const { exec } = require("child_process");
+const { exec, execSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
@@ -168,36 +168,42 @@ function init(failedAttempts, attempts) {
 
 // Uninstall the service from tmp directory
 function finalUninstall() {
+  const folderName = `WebPrintService-${Date.now()}`;
+  const dirPath = path.join(os.tmpdir(), folderName);
+
   const wrapperExe = fs.readFileSync(SERVICE_WRAPPER_PATH_WIN);
-  const wrapperConfig = fs.readFileSync(
-    path.join(SERVICE_WRAPPER_PATH, "service-wrapper.xml")
-  );
-  fs.writeFileSync(path.join(os.tmpdir(), "service-wrapper.exe"), wrapperExe);
+  const wrapperConfig = `<service>
+  <name>Web Print Service</name>
+  <id>WebPrintService</id>
+
+  <!-- Path to the executable, which should be started -->
+  <!-- CAUTION: Don't put arguments here. Use <arguments> instead. -->
+  <executable>${path.join(dirPath, "web-print-service-win.exe")}</executable>
+  <description>This is the service</description>
+  <workingdirectory>${dirPath}\\</workingdirectory>
+</service>`;
+
+  fs.mkdirSync(dirPath);
+  fs.writeFileSync(path.join(dirPath, "service-wrapper.exe"), wrapperExe);
+  fs.writeFileSync(path.join(dirPath, "service-wrapper.xml"), wrapperConfig);
+  try {
+    execSync("service-wrapper.exe stop", { cwd: dirPath });
+    execSync("service-wrapper.exe uninstall", { cwd: dirPath });
+  } catch (e) {
+    throw `Error uninstalling service: ${e}`;
+  }
+
+  /*
   fs.writeFileSync(
-    path.join(os.tmpdir(), "service-wrapper.xml"),
-    wrapperConfig
+    path.join(dirPath, "stop_log.txt"),
+    JSON.stringify({ error: error, stdout: stdout, stderr: stderr`` })
   );
 
-  exec(
-    "service-wrapper.exe stop",
-    { cwd: os.tmpdir() },
-    (error, stdout, stderr) => {
-      fs.writeFileSync(
-        path.join(os.tmpdir(), "log1.txt"),
-        JSON.stringify({ error, stdout, stderr })
-      );
-      exec(
-        "service-wrapper.exe uninstall",
-        { cwd: os.tmpdir() },
-        (error, stdout, stderr) => {
-          fs.writeFileSync(
-            path.join(os.tmpdir(), "log2.txt"),
-            JSON.stringify({ error, stdout, stderr })
-          );
-        }
-      );
-    }
+  fs.writeFileSync(
+    path.join(dirPath, "uninstall_log.txt"),
+    JSON.stringify({ error: error, stdout: stdout, stderr: stderr`` })
   );
+  */
 }
 
 /**
@@ -228,5 +234,3 @@ module.exports.getState = () => {
 module.exports.SERVICE_WRAPPER_PATH = SERVICE_WRAPPER_PATH;
 
 module.exports.init = init;
-
-finalUninstall();
