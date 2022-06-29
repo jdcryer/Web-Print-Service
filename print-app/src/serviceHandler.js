@@ -179,7 +179,9 @@ function finalUninstall() {
   const folderName = `WebPrintService-${Date.now()}`;
   const dirPath = path.join(os.tmpdir(), folderName);
 
-  const wrapperExe = fs.readFileSync(SERVICE_WRAPPER_PATH_WIN);
+  const wrapperExe = fs.readFileSync(
+    path.join(__dirname, "/static/service/service-wrapper.exe")
+  );
   const wrapperConfig = `<service>
   <name>Web Print Service</name>
   <id>WebPrintService</id>
@@ -200,18 +202,6 @@ function finalUninstall() {
   } catch (e) {
     throw `Error uninstalling service: ${e}`;
   }
-
-  /*
-  fs.writeFileSync(
-    path.join(dirPath, "stop_log.txt"),
-    JSON.stringify({ error: error, stdout: stdout, stderr: stderr`` })
-  );
-
-  fs.writeFileSync(
-    path.join(dirPath, "uninstall_log.txt"),
-    JSON.stringify({ error: error, stdout: stdout, stderr: stderr`` })
-  );
-  */
 }
 
 /**

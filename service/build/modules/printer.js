@@ -96,10 +96,12 @@ class PrinterConnector {
         return;
       }
       if (process.platform === "win32") {
+        console.log("Printing using PDFtoPrinter");
         execute(`${PRINT_WRAPPER_PATH} output.pdf "${printerName}"`)
           .then(resolve)
           .catch((e) => console.log(e.error));
       } else {
+        console.log("Printing using CUPS");
         print("output.pdf", printerName, ["-o portrait"])
           .then(resolve)
           .catch(console.log);

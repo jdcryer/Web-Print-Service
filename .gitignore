@@ -119,5 +119,6 @@ printer-config.json
 user-profile.json
 *.pdf
 
-# allow
-!PDFtoPrinter.exe
+service/static/PDFtoPrinter.exe
+
+print-app/static/service/static/PDFtoPrinter.exe

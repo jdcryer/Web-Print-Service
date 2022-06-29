@@ -28,47 +28,19 @@ function handleSquirrelEvent() {
   const exeName = path.basename(process.execPath);
 
   const spawn = function (command, args) {
-    let spawnedProcess, error;
+    let spawnedProcess;
 
     try {
       spawnedProcess = ChildProcess.spawn(command, args, { detached: true });
     } catch (error) {
       throw new Error(error);
     }
-
     return spawnedProcess;
   };
 
   const spawnUpdate = function (args) {
     return spawn(updateDotExe, args);
   };
-
-  /*
-  const spawnService = function () {
-    const cmd = spawn("cmd", [
-      `/K`,
-      `${os.tmpdir()}/service-wrapper.exe`,
-      `stop`,
-      `&`,
-      `${os.tmpdir()}/service-wrapper.exe`,
-      `uninstall`,
-    ]);
-    cmd.unref();
-    cmd.stdin.setEncoding = "utf-8";
-
-    cmd.stdout.on("data", (data) => {
-      fs.writeFileSync(os.tmpdir() + "/s_w_logs.txt", data + "\n");
-    });
-
-    cmd.stderr.on("data", (data) => {
-      fs.writeFileSync(os.tmpdir() + "/s_w_err.txt", data + "\n");
-    });
-
-    cmd.on("close", (code) => {
-      console.log(`child process exited with code ${code}`);
-    });
-  };
-  */
 
   const squirrelEvent = process.argv[1];
   switch (squirrelEvent) {
@@ -91,18 +63,8 @@ function handleSquirrelEvent() {
 
       // Remove desktop and start menu shortcuts
       spawnUpdate(["--removeShortcut", exeName]);
-      axios.delete("http://localhost:3001/uninstall").then((res) => {
-        if (res.success) {
-          finalUninstall();
-        } else {
-          // not sure we can stop squirrel from uninstalling here
-        }
-      });
-
-      //finalUninstall();
-
+      finalUninstall();
       setTimeout(app.quit, 10000);
-
       return true;
 
     case "--squirrel-obsolete":
