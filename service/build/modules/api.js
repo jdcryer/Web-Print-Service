@@ -180,7 +180,7 @@ class Api {
 
   newPdfDoc = () => {
     return new PDFDocument({
-      size: [72 * 2, 72 * 1], // TODO: needs to be in points (1/72 inches)
+      size: [224.64, 72 * 1], // TODO: needs to be in points (1/72 inches)
       bufferPages: true,
     });
   };
