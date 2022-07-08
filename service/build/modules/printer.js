@@ -1,6 +1,7 @@
 const printerHandler = require("@thiagoelg/node-printer");
 const fs = require("fs");
 const { print } = require("unix-print");
+const { execSync } = require("child_process");
 
 const { exec } = require("child_process");
 
@@ -36,7 +37,7 @@ class PrinterConnector {
   getConfig() {
     let printersConfig, //Stores current configuration of printers
       printersStatus; //Stores status of printers to be applied onto the current config to update it
-    //If a printer appears in a status but is not in config it means its a new printer so it creates a new entry with knew default settings
+    //If a printer appears in status but is not in config it means its a new printer so a new entry is created with new default settings
     printersStatus = printerHandler.getPrinters();
     if (!printersStatus) {
       throw new Error("Cannot get printers status");
@@ -70,6 +71,13 @@ class PrinterConnector {
 
       return out;
     });
+
+    // Can get current print width to do checks
+    /*
+    if (process.platform === "win32") {
+      //execSync(`Get-CimInstance -ClassName Win32_PrinterConfiguration | Where-Object {$_.Name -eq "${}"} | Select-Object -Property PaperWidth`)
+    } else {}
+    */
 
     this.#saveConfig(printersConfig);
     this.config = printersConfig;
@@ -125,6 +133,7 @@ class PrinterConnector {
     // Given a printer name and ID
     return this.getConfig().find((x) => x.id === id);
   }
+
   editPrinter(name, data) {
     this.config = this.getConfig();
     const pIndex = this.config.findIndex((x) => x.name == name);

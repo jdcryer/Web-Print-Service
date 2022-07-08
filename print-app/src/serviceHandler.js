@@ -11,10 +11,16 @@ const isWin = process.platform === "win32";
 const SERVICE_WRAPPER_PATH = __dirname + "/static/service/";
 
 //Windows
-const SERVICE_WRAPPER_PATH_WIN = `"${path.join(
-  SERVICE_WRAPPER_PATH,
-  "service-wrapper.exe"
-)}"`;
+const SERVICE_WRAPPER_PATH_WIN =
+  process.platform === "win32"
+    ? `${path.join(
+        SERVICE_WRAPPER_PATH.replace(" ", "^ "),
+        "service-wrapper.exe"
+      )}`
+    : `${path.join(
+        SERVICE_WRAPPER_PATH.replace(" ", "\\ "),
+        "service-wrapper.exe"
+      )}`;
 const SERVICE_WRAPPER_LOG_PATH =
   SERVICE_WRAPPER_PATH + `service-wrapper.wrapper.log`;
 const SERVICE_APP_LOG_PATH = SERVICE_WRAPPER_PATH + `service-wrapper.out.log`;
@@ -113,7 +119,8 @@ function service(command) {
 
   return new Promise((resolve, reject) => {
     prom.then(({ error, stdout, stderr }) => {
-      if (error) {
+      // The wrapper considers NonExistent an error when running status so we just ignore the "error"
+      if (error && !stdout.includes("NonExistent")) {
         resolve({
           success: false,
           error: error,
@@ -138,7 +145,9 @@ function init(failedAttempts, attempts) {
     service("status").then((res) => {
       //If somehow this fails give up on installing/starting as theres something majorly wrong
       if (res.success == false) {
-        reject("Cannot access services");
+        reject(
+          `Cannot access services, error: ${res.error}\nstdout: ${res.stdout}\nstderr: ${res.stderr}`
+        );
         return;
       } else {
         //Check to see if installed
@@ -196,10 +205,24 @@ function finalUninstall() {
   fs.mkdirSync(dirPath);
   fs.writeFileSync(path.join(dirPath, "service-wrapper.exe"), wrapperExe);
   fs.writeFileSync(path.join(dirPath, "service-wrapper.xml"), wrapperConfig);
+  fs.writeFileSync(
+    path.join(dirPath, "web-print-service-win.exe"),
+    fs.readFileSync(SERVICE_WRAPPER_PATH_WIN)
+  );
+
   try {
-    execSync("service-wrapper.exe stop", { cwd: dirPath });
-    execSync("service-wrapper.exe uninstall", { cwd: dirPath });
+    /*
+    fs.writeFileSync(
+      path.join(dirPath, "stop-result.txt"),
+      execSync("service-wrapper.exe stop", { cwd: dirPath })
+    );
+    */
+    fs.writeFileSync(
+      path.join(dirPath, "uninstall-result.txt"),
+      execSync("service-wrapper.exe uninstall", { cwd: dirPath })
+    );
   } catch (e) {
+    fs.writeFileSync(path.join(dirPath, "uninstall-error.txt"), "error " + e);
     throw `Error uninstalling service: ${e}`;
   }
 }

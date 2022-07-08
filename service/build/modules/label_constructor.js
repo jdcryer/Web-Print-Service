@@ -312,12 +312,13 @@ function buildJob(items, page, props, images, defaultFont, dpi, units) {
   return new Promise((resolve, reject) => {
     Promise.all(proms)
       .then((texts) => {
-        // TODO: set total size of label to be connected to job definition
         resolve(
-          `<svg height="1in" width="78mm">
-          <g transform="translate(${
-            convertUnits(page.leftMargin) + convertUnits(87.8)
-          },${convertUnits(page.topMargin)})">
+          `<svg width="${convertUnits(page.width)}" height="${convertUnits(
+            page.height
+          )}" >
+          <g transform="translate(${convertUnits(
+            page.leftMargin
+          )},${convertUnits(page.topMargin)})">
           ` +
             texts.reduce((acc, x) => acc + x, "") + //Reduce all the different objects to a string
             `

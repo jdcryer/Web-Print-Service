@@ -116,6 +116,9 @@ if (!handleSquirrelEvent()) {
     serviceHandlerUpdateInt = setInterval(() => {
       event.reply("serviceHandlerState", getState());
     }, 200);
+    console.log(
+      "---------------------------PROGRAM LOG START---------------------------"
+    );
     init(0, 0)
       .then((data) => {
         if (data.success) clearInterval(serviceHandlerUpdateInt);
@@ -123,6 +126,7 @@ if (!handleSquirrelEvent()) {
         console.log(data);
       })
       .catch((err) => {
+        console.log("Fatal error in service handling: " + err);
         throw new Error("Fatal error in service handling: " + err);
       });
   });
