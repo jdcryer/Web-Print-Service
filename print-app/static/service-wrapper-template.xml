@@ -11,7 +11,7 @@
 
     <!-- Path to the executable, which should be started -->
     <!-- CAUTION: Don't put arguments here. Use <arguments> instead. -->
-    <executable>%BASE%\web-print-service-win.exe</executable>
+    <executable>%BASE%\web-print-service-win-x64.exe</executable>
     <description>This is the service</description>
     <workingdirectory>%BASE%\</workingdirectory>
 </service>

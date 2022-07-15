@@ -1,10 +1,33 @@
 const { app, BrowserWindow, ipcMain, session } = require("electron");
 const path = require("path");
 const axios = require("axios");
+const { exec, spawn } = require("child_process");
+const { resolve } = require("path");
 
 if (require("electron-squirrel-startup")) {
   // eslint-disable-line global-require
   app.quit();
+}
+
+function getWinUserInfo() {
+  return new Promise((resolve, reject) => {
+    exec(`powershell -command "whoami"`, (err, stdout, stderr) => {
+      if (err) {
+        reject({
+          success: false,
+          error: `Error: ${err}\nstdout:${stdout}\nstderr: ${stderr}`,
+        });
+        return;
+      }
+      let username, domain;
+      [domain, username] = stdout.replace("\r\n", "").split("\\");
+      resolve({
+        success: true,
+        username: username,
+        domain: domain,
+      });
+    });
+  });
 }
 
 function handleSquirrelEvent() {
@@ -12,16 +35,7 @@ function handleSquirrelEvent() {
     return false;
   }
 
-  const ChildProcess = require("child_process");
-  const os = require("os");
-  const fs = require("fs");
-  const path = require("path");
-  const {
-    SERVICE_WRAPPER_PATH,
-    service,
-    finalUninstall,
-    makeConfigFile,
-  } = require("./serviceHandler");
+  const { finalUninstall } = require("./serviceHandler");
 
   const appFolder = path.resolve(process.execPath, "..");
   const mainFolder = path.resolve(appFolder, "..");
@@ -32,7 +46,7 @@ function handleSquirrelEvent() {
     let spawnedProcess;
 
     try {
-      spawnedProcess = ChildProcess.spawn(command, args, { detached: true });
+      spawnedProcess = spawn(command, args, { detached: true });
     } catch (error) {
       throw new Error(error);
     }
@@ -78,8 +92,13 @@ function handleSquirrelEvent() {
 }
 
 if (!handleSquirrelEvent()) {
-  const path = require("path");
-  const { service, getLogs, getState, init } = require("./serviceHandler");
+  const {
+    service,
+    getLogs,
+    getState,
+    init,
+    makeConfigFile,
+  } = require("./serviceHandler");
 
   serviceHandlerUpdateInt = undefined;
 
@@ -114,17 +133,35 @@ if (!handleSquirrelEvent()) {
   });
 
   ipcMain.on("username", (event, arg) => {
-    // TODO
-    //(async () => "hello").then((data) => {
-    event.reply("username", "Joseph");
-    //});
+    getWinUserInfo()
+      .then((data) => {
+        event.reply("username", data.username);
+      })
+      .catch((data) => {
+        const errString = "Error getting windows user info:" + data.error;
+        event.reply("makeConfigFile", errString);
+        console.log(errString);
+        throw new Error(errString);
+      });
   });
 
   ipcMain.on("makeConfigFile", (event, arg) => {
-    console.log(arg); // do something with password
-    makeConfigFile("DOMAIN", arg.username, arg.password).then((data) => {
-      event.reply("makeConfigFile", data);
-    });
+    getWinUserInfo()
+      .then((data) => {
+        makeConfigFile(data.domain, data.username, arg.password)
+          .then((data) => {
+            event.reply("makeConfigFile", data);
+          })
+          .catch((data) => {
+            const errString = "Error making config file:" + data.error;
+          });
+      })
+      .catch((data) => {
+        const errString = "Error getting windows user info:" + data;
+        event.reply("makeConfigFile", errString);
+        console.log(errString);
+        throw new Error(errString);
+      });
   });
 
   ipcMain.on("startServiceHandlerUpdate", (event, arg) => {
@@ -141,10 +178,9 @@ if (!handleSquirrelEvent()) {
         console.log(data);
       })
       .catch((err) => {
-        console.log(
-          `Fatal error in service handling:\nstdout: ${err.stdout}\nstderr: ${err.stderr} \nerror: ${err.error}`
-        );
-        throw new Error("Fatal error in service handling: " + err);
+        const strErr = `Fatal error in service handling:\nstdout: ${err.stdout}\nstderr: ${err.stderr} \nerror: ${err.error}`;
+        console.log(strErr);
+        throw new Error(strErr);
       });
   });
 
