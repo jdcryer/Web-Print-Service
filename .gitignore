@@ -122,3 +122,11 @@ user-profile.json
 service/static/PDFtoPrinter.exe
 
 print-app/static/static/PDFtoPrinter.exe
+
+print-app/static/web-print-service-macos-arm64
+
+service/out/web-print-service-macos-arm64
+
+print-app/static/service-wrapper.xml
+
+print-app/package-lock.json
