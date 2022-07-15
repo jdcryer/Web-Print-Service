@@ -60,11 +60,11 @@ function handleSquirrelEvent() {
     case "--squirrel-uninstall":
       // Undo anything you did in the --squirrel-install and
       // --squirrel-updated handlers
-
+      finalUninstall();
       // Remove desktop and start menu shortcuts
       spawnUpdate(["--removeShortcut", exeName]);
-      finalUninstall();
-      setTimeout(app.quit, 10000);
+
+      app.quit();
       return true;
 
     case "--squirrel-obsolete":

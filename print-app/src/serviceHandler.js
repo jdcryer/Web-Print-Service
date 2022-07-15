@@ -191,6 +191,7 @@ function finalUninstall() {
   const wrapperExe = fs.readFileSync(
     path.join(__dirname, "/static/service/service-wrapper.exe")
   );
+  /*
   const wrapperConfig = `<service>
   <name>Web Print Service</name>
   <id>WebPrintService</id>
@@ -200,6 +201,18 @@ function finalUninstall() {
   <executable>${path.join(dirPath, "web-print-service-win.exe")}</executable>
   <description>This is the service</description>
   <workingdirectory>${dirPath}\\</workingdirectory>
+</service>`;
+*/
+
+  const wrapperConfig = `<service>
+<name>Web Print Service</name>
+<id>WebPrintService</id>
+
+<!-- Path to the executable, which should be started -->
+<!-- CAUTION: Don't put arguments here. Use <arguments> instead. -->
+<executable>${path.join(dirPath, "web-print-service-win.exe")}</executable>
+<description>This is the service</description>
+<workingdirectory>%BASE%\\</workingdirectory>
 </service>`;
 
   fs.mkdirSync(dirPath);
@@ -211,20 +224,23 @@ function finalUninstall() {
   );
 
   try {
+    execSync("service-wrapper.exe uninstall", {
+      cwd: dirPath,
+      timeout: 4000,
+    });
     /*
-    fs.writeFileSync(
-      path.join(dirPath, "stop-result.txt"),
-      execSync("service-wrapper.exe stop", { cwd: dirPath })
-    );
+    execSync("service-wrapper.exe stop --no-wait", {
+      cwd: dirPath,
+      timeout: 4000,
+    });
     */
-    fs.writeFileSync(
-      path.join(dirPath, "uninstall-result.txt"),
-      execSync("service-wrapper.exe uninstall", { cwd: dirPath })
-    );
   } catch (e) {
-    fs.writeFileSync(path.join(dirPath, "uninstall-error.txt"), "error " + e);
-    throw `Error uninstalling service: ${e}`;
+    path.join(dirPath, "uninstall-error.txt"), "error " + e, { flag: "a" };
   }
+  fs.writeFileSync(
+    path.join(dirPath, "success.txt"),
+    "Service removed successfully"
+  );
 }
 
 /**
