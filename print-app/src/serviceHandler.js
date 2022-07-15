@@ -8,7 +8,7 @@ const SERVICE_NAME = "webprintservice";
 const isWin = process.platform === "win32";
 
 //Paths
-const SERVICE_WRAPPER_PATH = __dirname + "/static/service/";
+const SERVICE_WRAPPER_PATH = __dirname + "/static/";
 
 //Windows
 const SERVICE_WRAPPER_PATH_WIN =
@@ -189,7 +189,7 @@ function finalUninstall() {
   const dirPath = path.join(os.tmpdir(), folderName);
 
   const wrapperExe = fs.readFileSync(
-    path.join(__dirname, "/static/service/service-wrapper.exe")
+    path.join(__dirname, "/static/service-wrapper.exe")
   );
   /*
   const wrapperConfig = `<service>

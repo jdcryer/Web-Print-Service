@@ -2,40 +2,26 @@
   "name": "web-print-service",
   "version": "1.0.0",
   "description": "Print service application",
-  "main": "./build/server.js",
-  "bin": "./build/server.js",
+  "main": "./src/server.js",
+  "bin": "./src/server.js",
   "private": true,
   "scripts": {
-    "test": "mocha ./testing/test.js",
-    "start": "nodemon ./build/server.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/SamGuard/Web-Print-Service.git"
+    "start": "nodemon ./src/server.js"
   },
   "author": "Samuel Guard, Joseph Cryer",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/SamGuard/Web-Print-Service/issues"
-  },
-  "homepage": "https://github.com/SamGuard/Web-Print-Service#readme",
   "dependencies": {
     "@thiagoelg/node-printer": "^0.5.8",
     "axios": "^0.21.4",
-    "dotenv": "^10.0.0",
     "es-get-iterator": "github:jcryer/es-get-iterator",
     "express": "^4.18.1",
     "jimp": "^0.16.1",
     "pdfkit": "^0.13.0",
-    "request": "^2.88.2",
     "svg-to-pdfkit": "^0.1.8",
     "symbology": "^3.0.8",
     "unix-print": "^1.1.0"
   },
   "devDependencies": {
-    "chai": "^4.3.6",
-    "chai-as-promised": "^7.1.1",
-    "mocha": "^9.2.2",
     "nodemon": "^2.0.16",
     "pkg": "^5.7.0"
   },
@@ -45,11 +31,12 @@
       "/node_modules/pdfkit/js/data/"
     ],
     "scripts": [
-      "build/**/*.js",
+      "src/**/*.js",
       "node_modules/@thiagoelg/node-printer/lib/node_printer.node"
     ],
     "targets": [
-      "node16-win-x64"
+      "node16-win-x64",
+      "node16-macos-arm64"
     ]
   },
   "nodemonConfig": {
