@@ -192,7 +192,7 @@ function makeConfigFile(domain, username, password) {
       { encoding: "utf8" },
       (err, data) => {
         if (err) {
-          reject({ sucess: "false", error: err });
+          reject({ success: "false", error: err });
         }
         const configFile = data
           .replace("**DOMAIN**", domain)
@@ -209,7 +209,7 @@ function makeConfigFile(domain, username, password) {
               reject(err);
               return;
             }
-            resolve({ sucess: "true", error: "" });
+            resolve({ success: "true", error: "" });
           }
         );
       }

@@ -20,6 +20,7 @@ function handleSquirrelEvent() {
     SERVICE_WRAPPER_PATH,
     service,
     finalUninstall,
+    makeConfigFile,
   } = require("./serviceHandler");
 
   const appFolder = path.resolve(process.execPath, "..");
@@ -109,6 +110,20 @@ if (!handleSquirrelEvent()) {
   ipcMain.on("status", (event, arg) => {
     service("status").then((data) => {
       event.reply("status", data);
+    });
+  });
+
+  ipcMain.on("username", (event, arg) => {
+    // TODO
+    //(async () => "hello").then((data) => {
+    event.reply("username", "Joseph");
+    //});
+  });
+
+  ipcMain.on("makeConfigFile", (event, arg) => {
+    console.log(arg); // do something with password
+    makeConfigFile("DOMAIN", arg.username, arg.password).then((data) => {
+      event.reply("makeConfigFile", data);
     });
   });
 
