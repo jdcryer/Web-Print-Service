@@ -126,7 +126,9 @@ if (!handleSquirrelEvent()) {
         console.log(data);
       })
       .catch((err) => {
-        console.log("Fatal error in service handling: " + err);
+        console.log(
+          `Fatal error in service handling:\nstdout: ${err.stdout}\nstderr: ${err.stderr} \nerror: ${err.error}`
+        );
         throw new Error("Fatal error in service handling: " + err);
       });
   });

@@ -2,12 +2,14 @@ const { exec, execSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
+const { resolve } = require("path");
 
 //System definitions
 const SERVICE_NAME = "webprintservice";
 const isWin = process.platform === "win32";
 
 //Paths
+const STATIC_PATH = __dirname + "/static";
 const SERVICE_WRAPPER_PATH = __dirname + "/static/";
 
 //Windows
@@ -183,6 +185,38 @@ function init(failedAttempts, attempts) {
   });
 }
 
+function makeConfigFile(domain, username, password) {
+  return new Promise((resolve, reject) => {
+    fs.readFile(
+      "static/service-wrapper-template.xml",
+      { encoding: "utf8" },
+      (err, data) => {
+        if (err) {
+          reject({ sucess: "false", error: err });
+        }
+        const configFile = data
+          .replace("**DOMAIN**", domain)
+          .replace("**USERNAME**", username)
+          .replace("**PASSWORD**", password);
+        fs.writeFile(
+          "static/service-wrapper.xml",
+          configFile,
+          {
+            encoding: "utf8",
+          },
+          (err) => {
+            if (err) {
+              reject(err);
+              return;
+            }
+            resolve({ sucess: "true", error: "" });
+          }
+        );
+      }
+    );
+  });
+}
+
 // Uninstall the service from tmp directory
 function finalUninstall() {
   const folderName = `WebPrintService-${Date.now()}`;
@@ -267,7 +301,6 @@ module.exports.getLogs = getLogs;
 module.exports.getState = () => {
   return state;
 };
-
 module.exports.SERVICE_WRAPPER_PATH = SERVICE_WRAPPER_PATH;
-
+module.exports.makeConfigFile = makeConfigFile;
 module.exports.init = init;

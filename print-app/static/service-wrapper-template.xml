@@ -3,7 +3,9 @@
     <id>WebPrintService</id>
 
     <serviceaccount>
-        <prompt>dialog</prompt>
+        <domain>**DOMAIN**</domain>
+        <user>**USERNAME**</user>
+        <password>**PASSWORD**</password>
         <allowservicelogon>true</allowservicelogon>
     </serviceaccount>
 
