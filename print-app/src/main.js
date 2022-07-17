@@ -4,6 +4,10 @@ const axios = require("axios");
 const { exec, spawn } = require("child_process");
 const { resolve } = require("path");
 
+function formatError(data) {
+  return `${data.error}\nstdout:${data.stdout}\nstderr: ${data.stderr}\n`;
+}
+
 if (require("electron-squirrel-startup")) {
   // eslint-disable-line global-require
   app.quit();
@@ -15,7 +19,7 @@ function getWinUserInfo() {
       if (err) {
         reject({
           success: false,
-          error: `Error: ${err}\nstdout:${stdout}\nstderr: ${stderr}`,
+          error: `Error in getting win user information: ${formatError(err)}`,
         });
         return;
       }
@@ -103,33 +107,63 @@ if (!handleSquirrelEvent()) {
   serviceHandlerUpdateInt = undefined;
 
   ipcMain.on("install", (event, arg) => {
-    service("install").then((data) => {
-      event.reply("install", data);
-    });
+    service("install")
+      .then((data) => {
+        event.reply("install", data);
+      })
+      .catch((data) => {
+        console.log(`Error: ${formatError(data)}`);
+        event.reply("install", data);
+        throw new Error(`Error: ${formatError(data)}`);
+      });
   });
 
   ipcMain.on("uninstall", (event, arg) => {
-    service("uninstall").then((data) => {
-      event.reply("uninstall", data);
-    });
+    service("uninstall")
+      .then((data) => {
+        event.reply("uninstall", data);
+      })
+      .catch((data) => {
+        console.log(`Error: ${formatError(data)}`);
+        event.reply("install", data);
+        throw new Error(`Error: ${formatError(data)}`);
+      });
   });
 
   ipcMain.on("start", (event, arg) => {
-    service("start").then((data) => {
-      event.reply("start", data);
-    });
+    service("start")
+      .then((data) => {
+        event.reply("start", data);
+      })
+      .catch((data) => {
+        console.log(`Error: ${formatError(data)}`);
+        event.reply("install", data);
+        throw new Error(`Error: ${formatError(data)}`);
+      });
   });
 
   ipcMain.on("stop", (event, arg) => {
-    service("stop").then((data) => {
-      event.reply("stop", data);
-    });
+    service("stop")
+      .then((data) => {
+        event.reply("stop", data);
+      })
+      .catch((data) => {
+        console.log(`Error: ${formatError(data)}`);
+        event.reply("install", data);
+        throw new Error(`Error: ${formatError(data)}`);
+      });
   });
 
   ipcMain.on("status", (event, arg) => {
-    service("status").then((data) => {
-      event.reply("status", data);
-    });
+    service("status")
+      .then((data) => {
+        event.reply("status", data);
+      })
+      .catch((data) => {
+        console.log(`Error: ${formatError(data)}`);
+        event.reply("install", data);
+        throw new Error(`Error: ${formatError(data)}`);
+      });
   });
 
   ipcMain.on("username", (event, arg) => {

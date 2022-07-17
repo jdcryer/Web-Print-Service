@@ -5,32 +5,40 @@ const os = require("os");
 const { resolve } = require("path");
 
 //System definitions
-const SERVICE_NAME = "webprintservice";
-const isWin = process.platform === "win32";
+const SERVICE_ID = "webprintservice";
+const PROGRAM_EXE_NAME = "web-print-service-win-x64.exe";
 
 //Paths
-const STATIC_PATH = __dirname + "/static";
-const SERVICE_WRAPPER_PATH = __dirname + "/static/";
+const SERVICE_WRAPPER_DIR_PATH = path.join(
+  __dirname.replace(" ", "^ "),
+  "static"
+);
 
 //Windows
-const SERVICE_WRAPPER_PATH_WIN =
-  process.platform === "win32"
-    ? `${path.join(
-        SERVICE_WRAPPER_PATH.replace(" ", "^ "),
-        "service-wrapper.exe"
-      )}`
-    : `${path.join(
-        SERVICE_WRAPPER_PATH.replace(" ", "\\ "),
-        "service-wrapper.exe"
-      )}`;
-const SERVICE_WRAPPER_LOG_PATH =
-  SERVICE_WRAPPER_PATH + `service-wrapper.wrapper.log`;
-const SERVICE_APP_LOG_PATH = SERVICE_WRAPPER_PATH + `service-wrapper.out.log`;
-const SERVICE_ERR_LOG_PATH = SERVICE_WRAPPER_PATH + `service-wrapper.err.log`;
-
-//Mac
-const SERVICE_WRAPPER_PATH_MAC = SERVICE_WRAPPER_PATH + `service-mac.xml`;
-const MAC_CONFIG_LOCATION = `~/Library/LaunchAgents/`;
+const SERVICE_WRAPPER_EXE_PATH = path.join(
+  SERVICE_WRAPPER_DIR_PATH,
+  "service-wrapper.exe"
+);
+const SERVICE_WRAPPER_CONFIG_TEMPLATE_PATH = path.join(
+  SERVICE_WRAPPER_DIR_PATH,
+  "service-wrapper-template.xml"
+);
+const SERVICE_WRAPPER_CONFIG_PATH = path.join(
+  SERVICE_WRAPPER_DIR_PATH,
+  "service-wrapper.xml"
+);
+const SERVICE_WRAPPER_LOG_PATH = path.join(
+  SERVICE_WRAPPER_DIR_PATH,
+  `service-wrapper.wrapper.log`
+);
+const SERVICE_APP_LOG_PATH = path.join(
+  SERVICE_WRAPPER_DIR_PATH,
+  `service-wrapper.out.log`
+);
+const SERVICE_ERR_LOG_PATH = path.join(
+  SERVICE_WRAPPER_DIR_PATH,
+  `service-wrapper.err.log`
+);
 
 const STATUS_RUNNING = "running";
 const STATUS_STOPPED = "stopped";
@@ -38,26 +46,12 @@ const STATUS_NOT_INSTALLED = "not_installed";
 
 let state = "idle";
 
-let installServiceCommand,
-  uninstallServiceCommand,
-  startServiceCommand,
-  stopServiceCommand,
-  getStatCommand;
-
 //Commands
-if (isWin) {
-  installServiceCommand = `${SERVICE_WRAPPER_PATH_WIN} install`;
-  uninstallServiceCommand = `${SERVICE_WRAPPER_PATH_WIN} uninstall`;
-  startServiceCommand = `${SERVICE_WRAPPER_PATH_WIN} start`;
-  stopServiceCommand = `${SERVICE_WRAPPER_PATH_WIN} stop`;
-  getStatCommand = `${SERVICE_WRAPPER_PATH_WIN} status`;
-} else {
-  installServiceCommand = undefined;
-  uninstallServiceCommand = undefined;
-  startServiceCommand = `sudo launchctl start`;
-  stopServiceCommand = `sudo launchctl stop`;
-  getStatCommand = undefined;
-}
+const installServiceCommand = `${SERVICE_WRAPPER_EXE_PATH} install`;
+const uninstallServiceCommand = `${SERVICE_WRAPPER_EXE_PATH} uninstall`;
+const startServiceCommand = `${SERVICE_WRAPPER_EXE_PATH} start`;
+const stopServiceCommand = `${SERVICE_WRAPPER_EXE_PATH} stop`;
+const getStatCommand = `${SERVICE_WRAPPER_EXE_PATH} status`;
 
 function formatStatus(s) {
   s = s.toLowerCase();
@@ -123,12 +117,12 @@ function service(command) {
     prom.then(({ error, stdout, stderr }) => {
       // The wrapper considers NonExistent an error when running status so we just ignore the "error"
       if (error && !stdout.includes("NonExistent")) {
-        resolve({
+        reject({
           success: false,
           error: error,
           stdout: stdout,
           stderr: stderr,
-          dir: SERVICE_WRAPPER_PATH,
+          dir: SERVICE_WRAPPER_DIR_PATH,
         });
         return;
       }
@@ -188,18 +182,19 @@ function init(failedAttempts, attempts) {
 function makeConfigFile(domain, username, password) {
   return new Promise((resolve, reject) => {
     fs.readFile(
-      "static/service-wrapper-template.xml",
+      SERVICE_WRAPPER_CONFIG_TEMPLATE_PATH,
       { encoding: "utf8" },
       (err, data) => {
         if (err) {
           reject({ success: "false", error: err });
+          return;
         }
         const configFile = data
           .replace("**DOMAIN**", domain)
           .replace("**USERNAME**", username)
           .replace("**PASSWORD**", password);
         fs.writeFile(
-          "static/service-wrapper.xml",
+          SERVICE_WRAPPER_CONFIG_PATH,
           configFile,
           {
             encoding: "utf8",
@@ -222,21 +217,7 @@ function finalUninstall() {
   const folderName = `WebPrintService-${Date.now()}`;
   const dirPath = path.join(os.tmpdir(), folderName);
 
-  const wrapperExe = fs.readFileSync(
-    path.join(__dirname, "/static/service-wrapper.exe")
-  );
-  /*
-  const wrapperConfig = `<service>
-  <name>Web Print Service</name>
-  <id>WebPrintService</id>
-
-  <!-- Path to the executable, which should be started -->
-  <!-- CAUTION: Don't put arguments here. Use <arguments> instead. -->
-  <executable>${path.join(dirPath, "web-print-service-win.exe")}</executable>
-  <description>This is the service</description>
-  <workingdirectory>${dirPath}\\</workingdirectory>
-</service>`;
-*/
+  const wrapperExe = fs.readFileSync(SERVICE_WRAPPER_EXE_PATH);
 
   const wrapperConfig = `<service>
 <name>Web Print Service</name>
@@ -244,7 +225,7 @@ function finalUninstall() {
 
 <!-- Path to the executable, which should be started -->
 <!-- CAUTION: Don't put arguments here. Use <arguments> instead. -->
-<executable>${path.join(dirPath, "web-print-service-win.exe")}</executable>
+<executable>${path.join(dirPath, PROGRAM_EXE_NAME)}</executable>
 <description>This is the service</description>
 <workingdirectory>%BASE%\\</workingdirectory>
 </service>`;
@@ -253,23 +234,22 @@ function finalUninstall() {
   fs.writeFileSync(path.join(dirPath, "service-wrapper.exe"), wrapperExe);
   fs.writeFileSync(path.join(dirPath, "service-wrapper.xml"), wrapperConfig);
   fs.writeFileSync(
-    path.join(dirPath, "web-print-service-win.exe"),
-    fs.readFileSync(SERVICE_WRAPPER_PATH_WIN)
+    path.join(dirPath, PROGRAM_EXE_NAME),
+    fs.readFileSync(path.join(SERVICE_WRAPPER_DIR_PATH, PROGRAM_EXE_NAME))
   );
 
   try {
+    execSync("service-wrapper.exe stop", {
+      cwd: dirPath,
+      timeout: 4000,
+    });
     execSync("service-wrapper.exe uninstall", {
       cwd: dirPath,
       timeout: 4000,
     });
-    /*
-    execSync("service-wrapper.exe stop --no-wait", {
-      cwd: dirPath,
-      timeout: 4000,
-    });
-    */
   } catch (e) {
     path.join(dirPath, "uninstall-error.txt"), "error " + e, { flag: "a" };
+    return;
   }
   fs.writeFileSync(
     path.join(dirPath, "success.txt"),
@@ -301,6 +281,5 @@ module.exports.getLogs = getLogs;
 module.exports.getState = () => {
   return state;
 };
-module.exports.SERVICE_WRAPPER_PATH = SERVICE_WRAPPER_PATH;
 module.exports.makeConfigFile = makeConfigFile;
 module.exports.init = init;
