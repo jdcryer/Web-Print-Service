@@ -177,12 +177,13 @@ class Api {
     }
   }
 
-  newPdfDoc = () => {
+  // Width and height in inches
+  #newPdfDoc(width, height) {
     return new PDFDocument({
-      size: [72 * 2, 72 * 1], // TODO: needs to be in points (1/72 inches)
+      size: [width * 72, height * 72], // TODO: needs to be in points (1/72 inches)
       bufferPages: true,
     });
-  };
+  }
 
   startPrintJobListener() {
     if (this.running) return;
@@ -217,15 +218,13 @@ class Api {
 
             for (let i = 0; i < jobArray.length; i++) {
               let svgList = []; // create object list of { promise, quantity }
+              // Convert from points (1/72 of an inch) to inches
+              const labelWidth = jobArray[i].job.page.width / 72;
+              const labelHeight = jobArray[i].job.page.height / 72;
 
               for (let j = 0; j < jobArray[i].items.length; j++) {
                 svgList.push(
-                  build(
-                    jobArray[i].job, //  TODO: width and height come in as points (1/72 inches)
-                    jobArray[i].items[j],
-                    72,
-                    "pixel"
-                  )
+                  build(jobArray[i].job, jobArray[i].items[j], 72, "pixel")
                 );
               }
 
@@ -235,11 +234,13 @@ class Api {
                 qty: jobArray[i].items[j].detail.qty,
               }));
 
+              fs.writeFile("output.svg", svgList[0].svg, (err) => {});
+
               let numLabels = svgList
                 .map((x) => x.qty)
                 .reduce((p, c) => p + c, 0);
 
-              let doc = this.newPdfDoc();
+              let doc = this.#newPdfDoc(labelWidth, labelHeight);
               let stream = fs.createWriteStream("output.pdf");
               doc.pipe(stream);
               let currentSvg = 0;
@@ -270,7 +271,7 @@ class Api {
                       ""
                     );
                     if (currentLabel !== numLabels) {
-                      doc = this.newPdfDoc();
+                      doc = this.#newPdfDoc(labelWidth, labelHeight);
                       stream = fs.createWriteStream("output.pdf");
                       doc.pipe(stream);
                     }

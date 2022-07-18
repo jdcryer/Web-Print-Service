@@ -1,6 +1,8 @@
 const jimp = require("jimp");
 const axios = require("axios");
-const symbology = require("symbology");
+const JsBarcode = require("jsbarcode");
+const { DOMImplementation, XMLSerializer } = require("xmldom");
+const xmlSerializer = new XMLSerializer();
 
 const PIXEL_PER_MM = 140 / 50;
 const INCH_PER_MM = 1 / 25.4;
@@ -86,13 +88,13 @@ function convertUnits(val) {
 function getRot(rot) {
   switch (rot.toString()) {
     case "0":
-      return "N";
+      return "0";
     case "1":
-      return "R";
+      return "90";
     case "2":
-      return "I";
+      return "180";
     case "3":
-      return "B";
+      return "270";
     default:
       throw `Invalid rotation "${rot}"`;
   }
@@ -121,10 +123,20 @@ function buildField(input, prop, dpi, units) {
   const left = convertUnits(prop.left);
   const top = convertUnits(prop.top);
 
+  // Font style represent bold, italic and underlined
+  // When converted to a 3 bit binary, the least significant bit represents bold
+  // The middle bit is italics and then the most significant bit represents underlined
+  const fontStyle = prop.fontStyle;
+  const isUnderlined = fontStyle >= 4;
+  const isItalic = fontStyle % 4 >= 2;
+  const isBold = fontStyle % 2;
+
   return `
-  <text dominant-baseline="hanging" x="${left}" y="${top}" font-size="${fontSize}" font-family="${font}">${
-    prop.label !== undefined ? prop.label + " " + input : input
-  }</text>
+  <text dominant-baseline="hanging" x="${left}" y="${top}" font-size="${fontSize}" font-family="${font}" transform="rotate(${rotation})" 
+  ${isUnderlined ? `text-decoration="underline"` : ""} ${
+    isBold ? `font-weight="bold"` : `font-weight="normal"`
+  } ${isItalic ? `font-style="italic"` : `font-style="normal"`}
+  >${prop.label !== undefined ? prop.label + " " + input : input}</text>
   `;
 }
 
@@ -154,27 +166,26 @@ function buildBarcode(input, prop, dpi, units) {
   const width = convertUnits(prop.width);
   const rotation = prop.rotation !== undefined ? getRot(prop.rotation) : "";
 
-  // Return promise that will create a createStream from symbology
-  return new Promise((resolve, reject) => {
-    symbology
-      .createStream(
-        {
-          symbology: input.type, // Hopefully sending the correct ZINT enum codes, equivalent to symbology.SymbologyType.EANX
-          encoding: symbology.EncodingMode.DATA_MODE,
-          height: height,
-        },
-        input.value,
-        symbology.OutputType.SVG
-      )
-      .then((res) => {
-        let barcodeWidth = getBarcodeWidth(res.data);
-        let widthScale = width / barcodeWidth;
-        resolve(`<g transform="translate(${left}, ${top}) scale(${widthScale})">
-          ${res.data}
-        </g>`);
-      })
-      .catch(reject);
+  const document = new DOMImplementation().createDocument(
+    "http://www.w3.org/1999/xhtml",
+    "html",
+    null
+  );
+  const svgNode = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+
+  JsBarcode(svgNode, input.value, {
+    xmlDocument: document,
+    format: "CODE128",
+    height: height,
   });
+
+  const res = xmlSerializer.serializeToString(svgNode);
+
+  let barcodeWidth = getBarcodeWidth(res);
+  let widthScale = width / barcodeWidth;
+  return `<g transform="translate(${left}, ${top}) scale(${widthScale}) rotate(${rotation})">
+          ${res}
+        </g>`;
 }
 
 /**
@@ -186,48 +197,45 @@ function buildBarcode(input, prop, dpi, units) {
  * @returns {string} ZPL code for image
  */
 function buildImage(prop, img, dpi, units) {
-  if (!(prop.left !== undefined && prop.top !== undefined)) {
+  if (
+    prop.left === undefined ||
+    prop.top === undefined ||
+    prop.height == undefined
+  ) {
     throw "Job data is missing required attributes in Image";
   }
 
-  if (prop.width && prop.height) {
-    img.resize(
-      //Is not constant, made an exception for efficiency
-      prop.width,
-      prop.height * 4,
-      jimp.RESIZE_NEAREST_NEIGHBOR
-    );
+  const left = prop.left;
+  const top = prop.top;
+  const rotation = getRot(prop.rotation);
+  const imgRes = { x: img.bitmap.width, y: img.bitmap.height };
+  const imgDim = {
+    x: prop.width ? convertUnits(prop.width) : undefined,
+    y: convertUnits(prop.height),
+  };
+
+  // If only height exists then mantain aspect ration and scale with height
+  if (imgDim.x && imgDim.y) {
+    img.resize(imgDim.x, imgDim.y, jimp.RESIZE_NEAREST_NEIGHBOR);
+  } else {
+    const ratio = imgDim.y / imgRes.y;
+    img.resize(imgRes.x * ratio, imgDim.y, jimp.RESIZE_NEAREST_NEIGHBOR);
   }
 
   img.greyscale();
-  const left = prop.left;
-  const top = prop.top;
-  const width = img.bitmap.width;
-  const height = img.bitmap.height;
-  const rgbaData = [...img.bitmap.data];
-
-  const f = (pixel, i) => {
-    //Convert each greyscale value to hex
-    const out = Math.round((15 * pixel) / 255).toString(16);
-    if (width % 2 !== 0 && (i + 1) % width === 0) {
-      //Pad odd sized images
-      return "00";
-    }
-    return out; //Scale from 0-255 to 0-15 then convert to hex
-  };
-
-  //Take every 4th value as the sequence goes rgbargbargb...
-  //Since is greyscaled we only need either r, g or b
-  const data = rgbaData
-    .filter((_, index) => index % 4 == 0)
-    .map(f)
-    .reduce((acc, x) => acc + x, "");
-
-  return ``;
-  return `
-        ^FO${left},${top}^GFA,${Math.ceil((width * height) / 2)},${Math.ceil(
-    (width * height) / 2
-  )},${Math.ceil(width / 2)},${data}`;
+  return new Promise((resolve, reject) => {
+    img
+      .getBase64Async(jimp.AUTO)
+      .then((data) => {
+        resolve(
+          `<image transform="translate(${left}, ${top}) rotate(${rotation})" href="data:image/png;charset=utf-8;base64,${data}" alt="Embedded image" />`
+        );
+      })
+      .catch((err) => {
+        console.log("Error getting base64 of image", err.toString());
+        reject(err);
+      });
+  });
 }
 
 /**

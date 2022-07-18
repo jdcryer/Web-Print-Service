@@ -16,10 +16,11 @@
     "es-get-iterator": "github:jcryer/es-get-iterator",
     "express": "^4.18.1",
     "jimp": "^0.16.1",
+    "jsbarcode": "^3.11.5",
     "pdfkit": "^0.13.0",
     "svg-to-pdfkit": "^0.1.8",
-    "symbology": "^3.0.8",
-    "unix-print": "^1.1.0"
+    "unix-print": "^1.1.0",
+    "xmldom": "^0.6.0"
   },
   "devDependencies": {
     "nodemon": "^2.0.16",
