@@ -173,7 +173,7 @@ if (!handleSquirrelEvent()) {
       })
       .catch((data) => {
         const errString = "Error getting windows user info:" + data.error;
-        event.reply("makeConfigFile", errString);
+        event.reply("username", errString);
         console.log(errString);
         throw new Error(errString);
       });
@@ -192,7 +192,7 @@ if (!handleSquirrelEvent()) {
       })
       .catch((data) => {
         const errString = "Error getting windows user info:" + data;
-        event.reply("makeConfigFile", errString);
+        event.reply("makeConfigFile", data);
         console.log(errString);
         throw new Error(errString);
       });
