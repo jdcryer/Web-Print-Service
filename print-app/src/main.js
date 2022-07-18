@@ -24,7 +24,7 @@ function getWinUserInfo() {
         return;
       }
       let username, domain;
-      [domain, username] = stdout.replace("\r\n", "").split("\\");
+      [domain, username] = stdout.replaceAll("\r\n", "").split("\\");
       resolve({
         success: true,
         username: username,
@@ -39,7 +39,7 @@ function handleSquirrelEvent() {
     return false;
   }
 
-  const { finalUninstall } = require("./serviceHandler");
+  const { finalUninstall } = require("./serviceHandlerWin");
 
   const appFolder = path.resolve(process.execPath, "..");
   const mainFolder = path.resolve(appFolder, "..");
@@ -101,8 +101,12 @@ if (!handleSquirrelEvent()) {
     getLogs,
     getState,
     init,
-    makeConfigFile,
-  } = require("./serviceHandler");
+    makeWinConfigFile,
+    makeMacConfigFile,
+  } =
+    process.platform === "win32"
+      ? require("./serviceHandlerWin")
+      : require("./serviceHandlerMac");
 
   serviceHandlerUpdateInt = undefined;
 
@@ -157,7 +161,7 @@ if (!handleSquirrelEvent()) {
   ipcMain.on("status", (event, arg) => {
     service("status")
       .then((data) => {
-        event.reply("status", data);
+        event.reply("status", { ...data, isWin: process.platform === "win32" }); // Lets frontend know if user login modal is needed
       })
       .catch((data) => {
         console.log(`Error: ${formatError(data)}`);
@@ -167,6 +171,7 @@ if (!handleSquirrelEvent()) {
   });
 
   ipcMain.on("username", (event, arg) => {
+    // only used for Windows
     getWinUserInfo()
       .then((data) => {
         event.reply("username", data.username);
@@ -180,22 +185,40 @@ if (!handleSquirrelEvent()) {
   });
 
   ipcMain.on("makeConfigFile", (event, arg) => {
-    getWinUserInfo()
-      .then((data) => {
-        makeConfigFile(data.domain, data.username, arg.password)
-          .then((data) => {
-            event.reply("makeConfigFile", data);
-          })
-          .catch((data) => {
-            const errString = "Error making config file:" + data.error;
-          });
-      })
-      .catch((data) => {
-        const errString = "Error getting windows user info:" + data;
-        event.reply("makeConfigFile", data);
-        console.log(errString);
-        throw new Error(errString);
-      });
+    if (process.platform === "win32") {
+      getWinUserInfo()
+        .then((data) => {
+          makeWinConfigFile(data.domain, data.username, arg.password)
+            .then((data) => {
+              event.reply("makeConfigFile", data);
+            })
+            .catch((data) => {
+              const errString = "Error making config file:" + data.error;
+              event.reply("makeConfigFile", {
+                success: false,
+                error: errString,
+              });
+              console.log(errString);
+              throw new Error(errString);
+            });
+        })
+        .catch((data) => {
+          const errString = "Error getting Windows user info:" + data;
+          event.reply("makeConfigFile", { success: false, error: errString });
+          console.log(errString);
+          throw new Error(errString);
+        });
+    } else {
+      makeMacConfigFile()
+        .then((data) => {
+          event.reply("makeConfigFile", data);
+        })
+        .catch((data) => {
+          const errString = "Error making config file:" + data.error;
+          event.reply("makeConfigFile", data);
+          console.log(errString);
+        });
+    }
   });
 
   ipcMain.on("startServiceHandlerUpdate", (event, arg) => {

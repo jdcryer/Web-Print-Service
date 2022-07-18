@@ -132,3 +132,5 @@ print-app/static/service-wrapper.xml
 print-app/package-lock.json
 
 service/package-lock.json
+
+.DS_Store

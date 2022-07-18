@@ -22,6 +22,7 @@ function ServicePanel({ open, setOpen }) {
       });
     }
   }, [success, password, ipcRenderer]);
+
   useEffect(() => {
     let serviceListener = ipcRenderer.on(
       "serviceHandlerState",
@@ -37,17 +38,20 @@ function ServicePanel({ open, setOpen }) {
 
     ipcRenderer.once("status", (event, arg) => {
       console.log(arg.data);
-      if (arg.data === "not_installed") {
-        ipcRenderer.send("username");
+      if (arg.isWin) {
+        if (arg.data === "not_installed") {
+          ipcRenderer.send("username");
+        } else {
+          ipcRenderer.send("startServiceHandlerUpdate");
+        }
       } else {
-        ipcRenderer.send("startServiceHandlerUpdate");
+        ipcRenderer.send("makeConfigFile");
       }
     });
-    //         ipcRenderer.send("makeConfigFile");
 
     let makeListener = ipcRenderer.on("makeConfigFile", (event, arg) => {
       console.log(arg);
-      if (arg.success === "true") {
+      if (arg.success) {
         ipcRenderer.send("startServiceHandlerUpdate");
       } else {
         setSuccess(false);
