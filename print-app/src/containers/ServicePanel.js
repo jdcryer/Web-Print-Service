@@ -15,7 +15,6 @@ function ServicePanel({ open, setOpen }) {
 
   useEffect(() => {
     if (success) {
-      console.log(password);
       ipcRenderer.send("makeConfigFile", {
         username: username,
         password: password,
@@ -33,11 +32,9 @@ function ServicePanel({ open, setOpen }) {
 
     let usernameListener = ipcRenderer.on("username", (event, arg) => {
       setUsername(arg);
-      console.log(arg);
     });
 
     ipcRenderer.once("status", (event, arg) => {
-      console.log(arg.data);
       if (arg.isWin) {
         if (arg.data === "not_installed") {
           ipcRenderer.send("username");
@@ -50,7 +47,6 @@ function ServicePanel({ open, setOpen }) {
     });
 
     let makeListener = ipcRenderer.on("makeConfigFile", (event, arg) => {
-      console.log(arg);
       if (arg.success) {
         ipcRenderer.send("startServiceHandlerUpdate");
       } else {

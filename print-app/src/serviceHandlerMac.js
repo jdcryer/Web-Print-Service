@@ -8,10 +8,7 @@ const path = require("path");
 const SERVICE_NAME = `com.telekinetix.webprintservice`;
 const SERVICE_CONFIG_NAME = `${SERVICE_NAME}.plist`;
 
-const SERVICE_CONFIG_DIR_PATH = path.join(
-  __dirname.replaceAll(" ", "\\ "),
-  `static`
-);
+const SERVICE_CONFIG_DIR_PATH = path.join(__dirname, `static`);
 
 const SERVICE_CONFIG_TEMPLATE_PATH = path.join(
   SERVICE_CONFIG_DIR_PATH,
@@ -42,9 +39,12 @@ const STATUS_NOT_INSTALLED = "not_installed";
 
 let state = "idle";
 
+const esc = (str) => str.replaceAll(` `, `\\ `);
 //Commands
-const installServiceCommand = `cp ${SERVICE_CONFIG_PATH} ${SERVICE_INSTALL_PATH} && launchctl load ${SERVICE_INSTALL_PATH}`;
-const uninstallServiceCommand = `launchctl unload ${SERVICE_INSTALL_PATH}`;
+const installServiceCommand = `cp ${esc(SERVICE_CONFIG_PATH)} ${esc(
+  SERVICE_INSTALL_PATH
+)} && launchctl load ${esc(SERVICE_INSTALL_PATH)}`;
+const uninstallServiceCommand = `launchctl unload ${esc(SERVICE_INSTALL_PATH)}`;
 const startServiceCommand = `launchctl start ${SERVICE_NAME}`;
 const stopServiceCommand = `launchctl stop ${SERVICE_NAME}`;
 const getStatCommand = `launchctl list | grep ${SERVICE_NAME}`;

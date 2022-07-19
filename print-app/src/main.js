@@ -211,6 +211,7 @@ if (!handleSquirrelEvent()) {
     } else {
       makeMacConfigFile()
         .then((data) => {
+          console.log("Made config file!");
           event.reply("makeConfigFile", data);
         })
         .catch((data) => {
