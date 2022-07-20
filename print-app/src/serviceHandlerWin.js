@@ -114,8 +114,18 @@ function service(command) {
 
   return new Promise((resolve, reject) => {
     prom.then(({ error, stdout, stderr }) => {
-      // The wrapper considers NonExistent an error when running status so we just ignore the "error"
-      if (error && !stdout.includes("NonExistent")) {
+      // When no wrapper has been created yet, we need to catch and return "not_installed" so the frontend makes the wrapper.
+      if (
+        error &&
+        stdout.includes(
+          "System.IO.FileNotFoundException: Unable to locate service-wrapper"
+        ) &&
+        command === "status"
+      ) {
+        resolve({ success: true, data: STATUS_NOT_INSTALLED });
+        return;
+      }
+      if (error) {
         reject({
           success: false,
           error: error,
@@ -125,6 +135,7 @@ function service(command) {
         });
         return;
       }
+
       resolve({ success: true, data: postProcess(stdout) });
     });
   });
