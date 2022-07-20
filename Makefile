@@ -11,7 +11,7 @@ build-mac: rm-build-files
 	- cd print-app && npm run build
 
 build-win: rm-build-files
-	- cd service && npm run build
+	- powershell -command "cd service; npm run build"
 	cp service/out/web-print-service-win-x64.exe print-app/static
 	- powershell -command "cd print-app; npm run build"
 
