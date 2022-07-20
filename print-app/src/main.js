@@ -233,10 +233,26 @@ if (!handleSquirrelEvent()) {
       .then((data) => {
         if (data.success) clearInterval(serviceHandlerUpdateInt);
         event.reply("serviceHandlerState", getState());
-        console.log(data);
       })
       .catch((err) => {
+        if (err.stdout.includes("Cannot start service")) {
+          console.log("Failed to login on service start");
+          service("uninstall")
+            .then((data) => {
+              event.reply("windowsLoginFailed", err);
+              event.reply("serviceHandlerState", getState());
+            })
+            .catch((err) => {
+              const strErr = `Fatal error in uninstalling service after error:\nstdout: ${err.stdout}\nstderr: ${err.stderr} \nerror: ${err.error}`;
+              event.reply("windowsLoginFailed", err);
+              event.reply("serviceHandlerState", getState());
+              console.log(strErr);
+              throw new Error(strErr);
+            });
+          return;
+        }
         const strErr = `Fatal error in service handling:\nstdout: ${err.stdout}\nstderr: ${err.stderr} \nerror: ${err.error}`;
+        event.reply("serviceHandlerState", getState());
         console.log(strErr);
         throw new Error(strErr);
       });

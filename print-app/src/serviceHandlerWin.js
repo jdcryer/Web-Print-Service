@@ -131,50 +131,53 @@ function service(command) {
 }
 
 function init(failedAttempts, attempts) {
-  if (failedAttempts > 5 || attempts > 20) {
+  if (failedAttempts > 3 || attempts > 3) {
     throw new Error("Too many failed attempts");
   }
   return new Promise((resolve, reject) => {
     state = "Initialising";
     //Check current status
-    service("status").then((res) => {
-      //If somehow this fails give up on installing/starting as theres something majorly wrong
-      if (res.success == false) {
-        reject(
-          `Cannot access services, error: ${res.error}\nstdout: ${res.stdout}\nstderr: ${res.stderr}`
-        );
-        return;
-      } else {
-        //Check to see if installed
-        if (res.data === STATUS_NOT_INSTALLED) {
-          //Install service
-          state = "Installing";
-          service("install").then((data) => {
-            if (data.success == true) {
-              state = "Installed";
-              init(failedAttempts, attempts);
-            } else {
-              reject(data);
-            }
-          });
-        } else if (res.data === STATUS_STOPPED) {
-          state = "Starting";
-          service("start").then((data) => {
-            if (data.success == true) {
-              state = "Running";
-              resolve({ success: true });
-            } else {
-              reject(data);
-            }
-          });
-        } else if (res.data === STATUS_RUNNING) {
-          state = "Running";
-          resolve({ success: true });
+    service("status")
+      .then((res) => {
+        //If somehow this fails give up on installing/starting as theres something majorly wrong
+        if (res.success == false) {
+          reject(
+            `Cannot access services, error: ${res.error}\nstdout: ${res.stdout}\nstderr: ${res.stderr}`
+          );
+          return;
         } else {
-          resolve({ success: false, error: `Do not recognise ${res.data}` });
+          //Check to see if installed
+          if (res.data === STATUS_NOT_INSTALLED) {
+            //Install service
+            state = "Installing";
+            service("install")
+              .then((data) => {
+                state = "Installed";
+                init(failedAttempts, attempts + 1)
+                  .then(resolve)
+                  .catch(reject);
+              })
+              .catch(reject);
+            return;
+          } else if (res.data === STATUS_STOPPED) {
+            state = "Starting";
+            service("start")
+              .then((data) => {
+                state = "Running";
+                resolve({ success: true });
+              })
+              .catch((err) => {
+                reject(err);
+              });
+          } else if (res.data === STATUS_RUNNING) {
+            state = "Running";
+            resolve({ success: true });
+          } else {
+            resolve({ success: false, error: `Do not recognise ${res.data}` });
+          }
         }
-      }
-    });
+      })
+      .catch(reject);
   });
 }
 

@@ -55,12 +55,23 @@ function ServicePanel({ open, setOpen }) {
       }
     });
 
+    const failedLoginListener = ipcRenderer.on(
+      "windowsLoginFailed",
+      (event, arg) => {
+        setSuccess(false);
+        setError(
+          "Incorrect login, please enter your username and password for windows"
+        );
+      }
+    );
+
     ipcRenderer.send("status");
 
     return () => {
       ipcRenderer.removeListener("serviceHandlerState", serviceListener);
       ipcRenderer.removeListener("makeConfigFile", makeListener);
       ipcRenderer.removeListener("username", usernameListener);
+      ipcRenderer.removeListener("windowsLoginFailed", failedLoginListener);
     };
   }, []);
 
