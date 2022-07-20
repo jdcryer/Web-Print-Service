@@ -6,7 +6,8 @@
   "bin": "./src/server.js",
   "private": true,
   "scripts": {
-    "start": "nodemon ./src/server.js"
+    "start": "nodemon ./src/server.js",
+    "build": "pkg . --compress=GZip"
   },
   "author": "Samuel Guard, Joseph Cryer",
   "license": "ISC",
