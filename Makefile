@@ -1,4 +1,5 @@
 build: rm-build-files
+	- powershell -command "cd service; npm run build"
 	- cd service && npm run build
 	cp service/out/web-print-service-win-x64.exe print-app/static
 	cp service/out/web-print-service-macos-arm64 print-app/static
