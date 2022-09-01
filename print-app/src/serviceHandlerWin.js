@@ -227,6 +227,14 @@ function makeWinConfigFile(domain, username, password) {
 
 // Uninstall the service from tmp directory
 function finalUninstall() {
+  try {
+    execSync(
+      `powershell -command "Invoke-WebRequest -Uri 'http://localhost:3001/uninstall'"`
+    );
+  } catch (err) {
+    console.log("Failed to send uninstall request to service");
+  }
+
   const folderName = `WebPrintService-${Date.now()}`;
   const dirPath = path.join(os.tmpdir(), folderName);
 

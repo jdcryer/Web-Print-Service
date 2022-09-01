@@ -188,7 +188,7 @@ app.put("/editPrinter", async (req, res, next) => {
   }
 });
 
-app.delete("/uninstall", async (req, res, next) => {
+app.get("/uninstall", async (req, res, next) => {
   const ids = printer
     .getConfig()
     .filter((x) => x.id !== undefined)
