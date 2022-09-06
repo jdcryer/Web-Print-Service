@@ -14,6 +14,7 @@ class Api {
     this.running = false;
     this.failures = 0;
     this.pdfSpoolSize = 100;
+    this.cookie = "test";
   }
 
   updateDetails({ user, pass, baseUrl, printerIds }) {
@@ -57,11 +58,52 @@ class Api {
   postNewPrinterUrl = () =>
     `https://${this.user}:${this.pass}@${this.baseUrl}/print/printer`;
 
+  setCookie(headers) {
+    let cookie;
+    let cookies = headers["set-cookie"][0].split(";");
+
+    for (var i = 0; i < cookies.length; i++) {
+      cookie = cookies[i].split("=");
+      if (cookie[0].startsWith("4DSID")) {
+        this.cookie = cookies[i];
+        console.log(cookies[i]);
+        return;
+      }
+    }
+    this.cookie = "4DSID=test";
+    return;
+  }
+  get = async (url) => {
+    let res = await axios.get(url, { headers: { Cookie: this.cookie } });
+    this.setCookie(res.headers);
+    console.log(res.request._header);
+    return res;
+  };
+
+  post = async (url, obj) => {
+    let res = await axios.post(url, obj, { headers: { Cookie: this.cookie } });
+    this.setCookie(res.headers);
+    console.log(res.request._header);
+    return res;
+  };
+
+  put = async (url, obj) => {
+    let res = await axios.put(url, obj, { headers: { Cookie: this.cookie } });
+    this.setCookie(res.headers);
+    console.log(res.request._header);
+    return res;
+  };
+
+  del = async (url) => {
+    let res = await axios.delete(url, { headers: { Cookie: this.cookie } });
+    this.setCookie(res.headers);
+    console.log(res.request._header);
+    return res;
+  };
+
   async getUserIdAsync() {
     try {
-      const res = await axios.get(this.getUserIdUrl(), {
-        headers: { cookie: "print" },
-      });
+      const res = await this.get(this.getUserIdUrl());
       if (res.data.id === undefined) throw "Failed to connect.";
       return { success: true, data: res.data.id };
     } catch (error) {
@@ -71,7 +113,7 @@ class Api {
 
   async getJobCountAsync() {
     try {
-      const res = await axios.post(
+      const res = await this.post(
         this.getJobCountUrl(),
         this.buildPrinterIdQuery()
       );
@@ -84,7 +126,7 @@ class Api {
 
   async postNewPrinterAsync(userId, printerName, displayName, type, isPublic) {
     try {
-      const res = await axios.post(this.postNewPrinterUrl(), {
+      const res = await this.post(this.postNewPrinterUrl(), {
         fk_user: userId,
         name: displayName,
         type: type,
@@ -99,7 +141,7 @@ class Api {
 
   async editPrinterAsync(printerId, printerName, displayName, type, isPublic) {
     try {
-      const res = await axios.put(this.postNewPrinterUrl(), {
+      const res = await this.put(this.postNewPrinterUrl(), {
         id: printerId,
         name: displayName,
         type: type,
@@ -117,7 +159,7 @@ class Api {
 
   async deleteJobAsync(jobId) {
     try {
-      const res = await axios.delete(this.deleteJobUrl(jobId));
+      const res = await this.del(this.deleteJobUrl(jobId));
       if (res.statusText === "OK") return { success: true };
       return { success: false };
     } catch (error) {
@@ -127,7 +169,7 @@ class Api {
 
   async deletePrinterAsync(printerId) {
     try {
-      const res = await axios.delete(this.deletePrinterUrl(printerId));
+      const res = await this.del(this.deletePrinterUrl(printerId));
       if (res.statusText === "OK") {
         this.printerConn.removePrinter(printerId);
 
@@ -145,7 +187,7 @@ class Api {
     let numOnPage = 0;
     try {
       do {
-        let res = await axios.post(
+        let res = await this.post(
           this.getJobUrl(page),
           this.buildPrinterIdQuery()
         );
@@ -165,7 +207,7 @@ class Api {
     let numOnPage = 0;
     try {
       do {
-        let res = await axios.get(this.getItemsUrl(jobId, page));
+        let res = await this.get(this.getItemsUrl(jobId, page));
         numOnPage = res.data.response.recordsSent;
         if (numOnPage > 0)
           itemData = itemData.concat(res.data.response.printItem);
