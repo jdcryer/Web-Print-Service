@@ -206,4 +206,8 @@ app.post("/sendTestPrint", (req, res, next) => {
   res.send("success");
 });
 
+app.post("/ping", (req, res, next) => {
+  res.send(`Pong (Time: ${Date.now()})`);
+});
+
 module.exports = app;
