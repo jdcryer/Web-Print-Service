@@ -8,8 +8,6 @@ const app = express();
 
 app.use(require("morgan")("dev"));
 
-app.use("/releases/", express.static(nodePath.join(__dirname, "releases")));
-
 app.get("/latest/releases", (req, res) => {
   const clientOs = req.query.os;
 
