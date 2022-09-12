@@ -8,7 +8,9 @@ const app = express();
 
 app.use(require("morgan")("dev"));
 
-app.get("/latest", (req, res) => {
+app.use("/releases/", express.static(nodePath.join(__dirname, "releases")));
+
+app.get("/latest/releases", (req, res) => {
   const clientOs = req.query.os;
 
   if (!clientOs) {
@@ -23,7 +25,7 @@ app.get("/latest", (req, res) => {
   const latest = getLatestRelease(clientOs);
   const clientVersion = req.query.v;
 
-  if (clientVersion === latest) {
+  if (false && clientVersion === latest) {
     res.status(204).end();
   } else {
     const installUrl = new nodeUrl.URL(getBaseUrl());
@@ -36,6 +38,9 @@ app.get("/latest", (req, res) => {
 
     res.json({
       url: installUrl,
+      name: "My Release Name",
+      notes: "Theses are some release notes innit",
+      pub_date: "2013-09-18T12:29:53+01:00",
     });
   }
 });
@@ -91,12 +96,15 @@ app.use("/releases", (req, res) => {
 
   res.json({
     url: installUrl,
+    name: "My Release Name",
+    notes: "Theses are some release notes innit",
+    pub_date: "2013-09-18T12:29:53+01:00",
   });
 });
 
 let getBaseUrl = () => {
   if (process.env.NODE_ENV === "development") {
-    return "http://localhost:5500/update-server/";
+    return "http://localhost:5500/";
   } else {
     return process.env.BASE_URL;
   }
