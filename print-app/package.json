@@ -79,6 +79,7 @@
     "copy-webpack-plugin": "^9.1.0",
     "css-loader": "^6.0.0",
     "electron": "^13.2.1",
+    "electron-log": "^4.4.8",
     "node-loader": "^2.0.0",
     "style-loader": "^3.0.0",
     "webpack-permissions-plugin": "^1.0.8"

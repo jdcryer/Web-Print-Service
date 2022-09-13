@@ -4,10 +4,13 @@ const {
   ipcMain,
   session,
   autoUpdater,
+  dialog,
 } = require("electron");
 
 const path = require("path");
+const os = require("os");
 const childProcess = require("child_process");
+const compileLog = require("electron-log");
 
 function formatError(data) {
   return `${data.error}\nstdout:${data.stdout}\nstderr: ${data.stderr}\n`;
@@ -41,8 +44,9 @@ function getWinUserInfo() {
 
 function handleSquirrelEvent() {
   if (process.argv.length === 1) {
-    if (app.isPackaged) {
-      updateEvents();
+    if (app.isPackaged && process.platform === "win32") {
+      updateEventsWindows();
+      compileLog.info("Update events finished");
     }
     return false;
   }
@@ -79,7 +83,7 @@ function handleSquirrelEvent() {
       // Install desktop and start menu shortcuts
       spawnUpdate(["--createShortcut", exeName]);
 
-      setTimeout(app.quit, 1000);
+      app.quit();
       return true;
 
     case "--squirrel-uninstall":
@@ -104,19 +108,23 @@ function handleSquirrelEvent() {
 }
 
 // Setup update feed and events
-function updateEvents() {
-  const feedURL = `http://localhost:3002/latest?v=${app.getVersion()}&os=${
-    process.platform
-  }`;
-  console.log(feedURL);
+function updateEventsWindows() {
+  const feedURL = `${os.homedir()}\\AppData\\Local\\web_print_service\\Releases`;
 
+  compileLog.info(feedURL);
   autoUpdater.setFeedURL(feedURL);
+  compileLog.info(autoUpdater.getFeedURL());
+
   setInterval(() => {
+    compileLog.info("Started updated check");
     autoUpdater.checkForUpdates();
-  }, 1);
+    compileLog.info("Ended updated check");
+  }, 10000);
 
   autoUpdater.on("update-downloaded", (event, releaseNotes, releaseName) => {
     console.log("Update:)");
+    compileLog.info("Update window");
+
     const dialogOpts = {
       type: "info",
       buttons: ["Restart", "Later"],
@@ -126,9 +134,14 @@ function updateEvents() {
         "A new version has been downloaded. Restart the application to apply the updates.",
     };
 
-    dialog.showMessageBox(dialogOpts).then((returnValue) => {
-      if (returnValue.response === 0) autoUpdater.quitAndInstall();
-    });
+    dialog
+      .showMessageBox(dialogOpts)
+      .then((returnValue) => {
+        if (returnValue.response === 0) autoUpdater.quitAndInstall();
+      })
+      .catch((err) => {
+        compileLog.error(err.message);
+      });
   });
 }
 
@@ -150,6 +163,10 @@ if (handleSquirrelEvent()) {
     process.platform === "win32"
       ? require("./serviceHandlerWin")
       : require("./serviceHandlerMac");
+
+  if (app.isPackaged) {
+    compileLog.info("Starting normal processes");
+  }
 
   serviceHandlerUpdateInt = undefined;
 
