@@ -1,16 +1,15 @@
-const {
-  app,
-  BrowserWindow,
-  ipcMain,
-  session,
-  autoUpdater,
-  dialog,
-} = require("electron");
+const { app, BrowserWindow, ipcMain, session } = require("electron");
 
 const path = require("path");
 const os = require("os");
+const fs = require("fs");
 const childProcess = require("child_process");
 const compileLog = require("electron-log");
+
+const { saveServiceFiles, updateEvents } =
+  process.platform === "win32"
+    ? require("./updateWindows")
+    : { saveServiceFiles: () => {}, updateEvents: () => {} };
 
 function formatError(data) {
   return `${data.error}\nstdout:${data.stdout}\nstderr: ${data.stderr}\n`;
@@ -43,18 +42,19 @@ function getWinUserInfo() {
 }
 
 function handleSquirrelEvent() {
-  if (process.argv.length === 1) {
-    if (app.isPackaged && process.platform === "win32") {
-      updateEventsWindows();
-      compileLog.info("Update events finished");
-    }
-    return false;
-  }
-
+  // Get paths to execs and folders
   const appFolder = path.resolve(process.execPath, "..");
   const mainFolder = path.resolve(appFolder, "..");
   const updateDotExe = path.join(mainFolder, "Update.exe");
   const exeName = path.basename(process.execPath);
+  const releasesFolder = path.join(mainFolder, "Releases");
+
+  // If no arguements are provided then carry on to normal exec
+  if (process.argv.length === 1) {
+    return false;
+  }
+
+  // Below are the events that occur on install, update, uninstall...
 
   const spawn = function (command, args) {
     let spawnedProcess;
@@ -74,6 +74,13 @@ function handleSquirrelEvent() {
   const squirrelEvent = process.argv[1];
   switch (squirrelEvent) {
     case "--squirrel-install":
+      if (process.platform === "win32") {
+        try {
+          fs.statSync(releasesFolder);
+        } catch (err) {
+          fs.mkdirSync(releasesFolder);
+        }
+      }
     case "--squirrel-updated":
       // Optionally do things such as:
       // - Add your .exe to the PATH
@@ -104,54 +111,24 @@ function handleSquirrelEvent() {
       // --squirrel-updated
       app.quit();
       return true;
+    case "--squirrel-firstrun":
+      return false;
+
+    case "--update":
+      updateEvents(releasesFolder);
+      compileLog.info("Update events finished");
+      return false;
   }
+  compileLog.info(squirrelEvent);
+  return true;
 }
-
-// Setup update feed and events
-function updateEventsWindows() {
-  const feedURL = `${os.homedir()}\\AppData\\Local\\web_print_service\\Releases`;
-
-  compileLog.info(feedURL);
-  autoUpdater.setFeedURL(feedURL);
-  compileLog.info(autoUpdater.getFeedURL());
-
-  setInterval(() => {
-    compileLog.info("Started updated check");
-    autoUpdater.checkForUpdates();
-    compileLog.info("Ended updated check");
-  }, 10000);
-
-  autoUpdater.on("update-downloaded", (event, releaseNotes, releaseName) => {
-    console.log("Update:)");
-    compileLog.info("Update window");
-
-    const dialogOpts = {
-      type: "info",
-      buttons: ["Restart", "Later"],
-      title: "Application Update",
-      message: process.platform === "win32" ? releaseNotes : releaseName,
-      detail:
-        "A new version has been downloaded. Restart the application to apply the updates.",
-    };
-
-    dialog
-      .showMessageBox(dialogOpts)
-      .then((returnValue) => {
-        if (returnValue.response === 0) autoUpdater.quitAndInstall();
-      })
-      .catch((err) => {
-        compileLog.error(err.message);
-      });
-  });
-}
-
-console.log(
-  "\n---------------------------PROGRAM LOG START---------------------------"
-);
 
 if (handleSquirrelEvent()) {
-  app.quit();
+  if (app.isPackaged) {
+    compileLog.info("Exiting app");
+  }
 } else {
+  // Include service functions (dependent on os)
   const {
     service,
     getLogs,
