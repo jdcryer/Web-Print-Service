@@ -23,6 +23,7 @@ module.exports = {
           "static",
           "web-print-service-macos-arm64"
         ),
+        path.resolve(".webpack", "main", "static", "uninstall.sh"),
       ],
       // dist/app.js is redundant, it already got 755 by being included in the buildFolder above
     }),

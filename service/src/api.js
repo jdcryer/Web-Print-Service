@@ -23,6 +23,7 @@ class Api {
     this.baseUrl = baseUrl ?? this.baseUrl;
     this.printerIds = printerIds ?? this.printerIds;
     this.failures = 0;
+    this.cookie = "test";
   }
 
   togglePolling() {

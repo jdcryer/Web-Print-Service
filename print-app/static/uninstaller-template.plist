@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+    <dict>
+        <key>Label</key>
+            <string>com.telekinetix.uninstaller</string>
+        <key>ProgramArguments</key>
+            <array>
+                <string>/bin/sh</string>
+                <string>**PATH**/uninstall.sh</string>
+            </array>
+        <key>WorkingDirectory</key>
+            <string>**PATH**/</string>
+        <key>WatchPaths</key>
+        <array>
+            <string>**APP_PATH**</string>
+        </array>
+        <key>StandardOutPath</key>
+        <string>**PATH**/service.out.log</string>
+        <key>StandardErrorPath</key>
+        <string>**PATH**/service.err.log</string>
+    </dict>
+</plist>

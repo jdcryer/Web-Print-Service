@@ -2,6 +2,7 @@ const printerHandler = require("@thiagoelg/node-printer");
 const fs = require("fs");
 const { print } = require("unix-print");
 const { exec } = require("child_process");
+const homeDir = require("os").homedir();
 
 /**
  *
@@ -17,9 +18,23 @@ function execute(command) {
   });
 }
 
-const PRINT_CONFIG_PATH = process.cwd() + "/printer-config.json";
+const PRINT_CONFIG_PATH =
+  process.platform === "darwin"
+    ? `${homeDir}/Library/Application Support/Web Print Service/service/printer-config.json`
+    : process.cwd() + "/printer-config.json";
+
+const UNINSTALLER_CONFIG_PATH =
+  process.platform === "darwin"
+    ? `${homeDir}/Library/Application Support/Web Print Service/service/printer-config.txt`
+    : false;
+
 const EDITABLE_ATTRIBUTES = ["displayName", "acceptedTypes", "enabled"];
 const PRINT_WRAPPER_PATH = `"${process.cwd()}\\static\\PDFtoPrinter.exe"`;
+
+function writeUninstallPrinterFile(ids) {
+  if (!UNINSTALLER_CONFIG_PATH) return;
+  fs.writeFileSync(UNINSTALLER_CONFIG_PATH, ids);
+}
 
 class PrinterConnector {
   constructor() {
@@ -29,6 +44,7 @@ class PrinterConnector {
       this.config = JSON.parse(fs.readFileSync(PRINT_CONFIG_PATH, "utf-8"));
     } catch (err) {
       fs.writeFileSync(PRINT_CONFIG_PATH, JSON.stringify(this.config));
+      writeUninstallPrinterFile(this.config.map((x) => x.id).join(","));
     }
   }
 
@@ -164,6 +180,7 @@ class PrinterConnector {
 
   #saveConfig(config) {
     fs.writeFileSync(PRINT_CONFIG_PATH, JSON.stringify(config));
+    writeUninstallPrinterFile(config.map((x) => x.id).join(","));
   }
 }
 

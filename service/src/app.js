@@ -1,9 +1,23 @@
+const { profile } = require("console");
 const express = require("express"); //Used for routing http requests
 const fs = require("fs");
 const printer = new (require("./printer").default)();
 const api = require("./api");
 const app = express();
-const USER_PATH = process.cwd() + "/user-profile.json";
+const USER_PATH =
+  process.platform === "darwin"
+    ? `/Users/${process.env.USER}/Library/Application Support/Web Print Service/service/user-profile.json`
+    : process.cwd() + "/user-profile.json";
+
+const UNINSTALLER_PATH =
+  process.platform === "darwin"
+    ? `/Users/${process.env.USER}/Library/Application Support/Web Print Service/service/user-profile.txt`
+    : false;
+
+function writeUninstallLoginFile(username, password, baseUrl) {
+  if (!UNINSTALLER_PATH) return;
+  fs.writeFileSync(UNINSTALLER_PATH, `${username}\n${password}\n${baseUrl}`);
+}
 
 let apiInstance = new api({
   printerConnector: printer,
@@ -26,10 +40,6 @@ let apiInstance = new api({
     if (file == undefined || !file.username || !file.password || !file.baseUrl)
       throw "bad user-profile file";
 
-    process.env.USER = file.username;
-    process.env.PASS = file.password;
-    process.env.BASEURL = file.baseUrl;
-
     badFile = false;
     apiInstance.updateDetails({
       user: file.username,
@@ -48,6 +58,9 @@ let apiInstance = new api({
         if (err) throw err;
       }
     );
+
+    writeUninstallLoginFile(username, password, baseUrl);
+
     apiInstance.startPrintJobListener();
     console.log("Found login data");
   } catch (err) {
@@ -73,43 +86,58 @@ app.post("/postLogin", (req, res, next) => {
   const password = req.body.password;
   const baseUrl = req.body.baseUrl;
 
-  process.env.USER = username;
-  process.env.PASS = password;
-  process.env.BASEURL = baseUrl;
+  const oldUser = apiInstance.user;
+  const oldPass = apiInstance.pass;
+  const oldBase = apiInstance.baseUrl;
 
-  badFile = false;
   apiInstance.updateDetails({
     user: username,
     pass: password,
     baseUrl: baseUrl,
   });
-  fs.writeFile(
-    USER_PATH,
-    JSON.stringify({
-      username: username,
-      password: password,
-      baseUrl: baseUrl,
-    }),
-    (err) => {
-      if (err) {
-        res.send({ success: false, message: err.message });
-        throw err;
-      }
-      apiInstance
-        .getUserIdAsync()
-        .then((data) => {
-          if (data.error) {
-            res.send({ success: false, error: data.error.message });
-            return;
-          }
-          res.send({ success: true });
-          apiInstance.startPrintJobListener();
-        })
-        .catch((err) => {
-          console.error(err);
+
+  apiInstance
+    .getUserIdAsync()
+    .then((data) => {
+      if (data.error) {
+        res.send({ success: false, error: data.error.message });
+        apiInstance.updateDetails({
+          user: oldUser,
+          pass: oldPass,
+          baseUrl: oldBase,
         });
-    }
-  );
+        return;
+      }
+
+      fs.writeFile(
+        USER_PATH,
+        JSON.stringify({
+          username: username,
+          password: password,
+          baseUrl: baseUrl,
+        }),
+        (err) => {
+          if (err) {
+            apiInstance.updateDetails({
+              user: oldUser,
+              pass: oldPass,
+              baseUrl: oldBase,
+            });
+            res.send({ success: false, message: err.message });
+            throw err;
+          }
+          badFile = false;
+        }
+      );
+      writeUninstallLoginFile(username, password, baseUrl);
+
+      apiInstance.startPrintJobListener();
+
+      res.send({ success: true });
+    })
+    .catch((err) => {
+      console.error(err);
+    });
 });
 
 app.get("/checkLogin", (req, res, next) => {

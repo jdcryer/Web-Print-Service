@@ -1,12 +1,29 @@
 const { exec, execSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
-
+const { app } = require("electron");
 //System definitions
 
 //Paths
+//const SUPPORT_PATH = `/Users/${process.env.USER}/Library/Application Support/Web Print Service/service`;
+
+const SUPPORT_PATH = path.join(
+  app.getPath("appData"),
+  `Web Print Service/service`
+);
+
+if (!fs.existsSync(SUPPORT_PATH))
+  fs.mkdirSync(SUPPORT_PATH, { recursive: true });
+
+const UNINSTALL_CONFIG_PATH = path.join(SUPPORT_PATH, `file-paths.txt`);
+
 const SERVICE_NAME = `com.telekinetix.webprintservice`;
 const SERVICE_CONFIG_NAME = `${SERVICE_NAME}.plist`;
+
+const UNINSTALLER_NAME = `com.telekinetix.uninstaller`;
+const UNINSTALLER_CONFIG_NAME = `${UNINSTALLER_NAME}.plist`;
+
+const UNINSTALLER_SHELL_NAME = `uninstall.sh`;
 
 const SERVICE_CONFIG_DIR_PATH = path.join(__dirname, `static`);
 
@@ -14,9 +31,25 @@ const SERVICE_CONFIG_TEMPLATE_PATH = path.join(
   SERVICE_CONFIG_DIR_PATH,
   `service-config-template.plist`
 );
+
+const UNINSTALLER_TEMPLATE_PATH = path.join(
+  SERVICE_CONFIG_DIR_PATH,
+  `uninstaller-template.plist`
+);
+
 const SERVICE_CONFIG_PATH = path.join(
   SERVICE_CONFIG_DIR_PATH,
   SERVICE_CONFIG_NAME
+);
+
+const UNINSTALLER_CONFIG_PATH = path.join(
+  SERVICE_CONFIG_DIR_PATH,
+  UNINSTALLER_CONFIG_NAME
+);
+
+const UNINSTALLER_SHELL_PATH = path.join(
+  SERVICE_CONFIG_DIR_PATH,
+  UNINSTALLER_SHELL_NAME
 );
 
 const SERVICE_APP_LOG_PATH = path.join(
@@ -29,8 +62,17 @@ const SERVICE_ERR_LOG_PATH = path.join(
 );
 
 const SERVICE_INSTALL_PATH = path.join(
-  `/Users/${process.env.USER}/Library/LaunchAgents/`,
+  app.getPath("home"),
+  `Library`,
+  `LaunchAgents`,
   SERVICE_CONFIG_NAME
+);
+
+const UNINSTALLER_INSTALL_PATH = path.join(
+  app.getPath("home"),
+  `Library`,
+  `LaunchAgents`,
+  UNINSTALLER_CONFIG_NAME
 );
 
 const STATUS_RUNNING = "running";
@@ -43,11 +85,21 @@ const esc = (str) => str.replaceAll(` `, `\\ `);
 //Commands
 const installServiceCommand = `cp ${esc(SERVICE_CONFIG_PATH)} ${esc(
   SERVICE_INSTALL_PATH
-)} && launchctl load ${esc(SERVICE_INSTALL_PATH)}`;
-const uninstallServiceCommand = `launchctl unload ${esc(SERVICE_INSTALL_PATH)}`;
+)} && launchctl load ${esc(SERVICE_INSTALL_PATH)} && cp ${esc(
+  UNINSTALLER_CONFIG_PATH
+)} ${esc(UNINSTALLER_INSTALL_PATH)} && launchctl load ${esc(
+  UNINSTALLER_INSTALL_PATH
+)} && cp ${esc(UNINSTALLER_SHELL_PATH)} ${esc(SUPPORT_PATH)}`;
+
+const uninstallServiceCommand = `launchctl remove ${esc(SERVICE_INSTALL_PATH)}`;
 const startServiceCommand = `launchctl start ${SERVICE_NAME}`;
 const stopServiceCommand = `launchctl stop ${SERVICE_NAME}`;
 const getStatCommand = `launchctl list | grep ${SERVICE_NAME}`;
+
+fs.writeFileSync(
+  UNINSTALL_CONFIG_PATH,
+  `${SERVICE_NAME}\n${UNINSTALLER_NAME}\n${SERVICE_INSTALL_PATH}\n${UNINSTALLER_INSTALL_PATH}`
+);
 
 function formatStatus(s) {
   if (s.length === 0) {
@@ -185,6 +237,35 @@ function makeMacConfigFile() {
         const configFile = data.replaceAll("**PATH**", SERVICE_CONFIG_DIR_PATH);
         fs.writeFile(
           SERVICE_CONFIG_PATH,
+          configFile,
+          {
+            encoding: "utf8",
+          },
+          (err) => {
+            if (err) {
+              reject(err);
+              return;
+            }
+            resolve({ success: true });
+          }
+        );
+      }
+    );
+
+    fs.readFile(
+      UNINSTALLER_TEMPLATE_PATH,
+      { encoding: "utf8" },
+      (err, data) => {
+        if (err) {
+          reject({ success: false, error: err });
+          return;
+        }
+        const configFile = data
+          .replaceAll("**PATH**", SUPPORT_PATH)
+          .replaceAll("**APP_PATH**", SERVICE_CONFIG_PATH);
+
+        fs.writeFile(
+          UNINSTALLER_CONFIG_PATH,
           configFile,
           {
             encoding: "utf8",

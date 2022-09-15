@@ -314,16 +314,17 @@ function buildJob(items, page, props, images, defaultFont, dpi, units) {
   });
 }
 
-function addAuthToURL(url) {
-  const [user, pass] = [process.env.USER, process.env.pass];
+// Doesn't work due to process env changes
+// function addAuthToURL(url) {
+//   const [user, pass] = [process.env.USER, process.env.pass];
 
-  if (url.includes("https")) {
-    const splitUrl = url.split("https://");
-    return "https://" + `${user}:${pass}@` + splitUrl[1];
-  } else {
-    throw "Url must be https";
-  }
-}
+//   if (url.includes("https")) {
+//     const splitUrl = url.split("https://");
+//     return "https://" + `${user}:${pass}@` + splitUrl[1];
+//   } else {
+//     throw "Url must be https";
+//   }
+// }
 
 /**
  *
