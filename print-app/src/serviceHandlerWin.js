@@ -82,7 +82,7 @@ function execute(command) {
 /**
  *
  * @param {String} command Can be either install, uninstall, start, stop or status
- * @returns {Promise}
+ * @returns {Promise} Promise
  */
 function service(command) {
   let prom;

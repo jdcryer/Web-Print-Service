@@ -6,10 +6,12 @@ const fs = require("fs");
 const childProcess = require("child_process");
 const compileLog = require("electron-log");
 
-const { saveServiceFiles, updateEvents } =
+const { replaceServiceFiles, updateEvents } =
   process.platform === "win32"
     ? require("./updateWindows")
-    : { saveServiceFiles: () => {}, updateEvents: () => {} };
+    : { replaceServiceFiles: () => {}, updateEvents: () => {} };
+
+let appReadyToStart = Promise.resolve();
 
 function formatError(data) {
   return `${data.error}\nstdout:${data.stdout}\nstderr: ${data.stderr}\n`;
@@ -112,11 +114,11 @@ function handleSquirrelEvent() {
       app.quit();
       return true;
     case "--squirrel-firstrun":
+      replaceServiceFiles();
       return false;
 
     case "--update":
-      updateEvents(releasesFolder);
-      compileLog.info("Update events finished");
+      appReadyToStart = updateEvents(releasesFolder);
       return false;
   }
   compileLog.info(squirrelEvent);
@@ -128,109 +130,122 @@ if (handleSquirrelEvent()) {
     compileLog.info("Exiting app");
   }
 } else {
-  // Include service functions (dependent on os)
-  const {
-    service,
-    getLogs,
-    getState,
-    init,
-    makeWinConfigFile,
-    makeMacConfigFile,
-  } =
-    process.platform === "win32"
-      ? require("./serviceHandlerWin")
-      : require("./serviceHandlerMac");
+  appReadyToStart
+    .then(() => {
+      // Include service functions (dependent on os)
+      const {
+        service,
+        getLogs,
+        getState,
+        init,
+        makeWinConfigFile,
+        makeMacConfigFile,
+      } =
+        process.platform === "win32"
+          ? require("./serviceHandlerWin")
+          : require("./serviceHandlerMac");
 
-  if (app.isPackaged) {
-    compileLog.info("Starting normal processes");
-  }
+      if (app.isPackaged) compileLog.info("Starting normal processes");
 
-  serviceHandlerUpdateInt = undefined;
+      serviceHandlerUpdateInt = undefined;
 
-  ipcMain.on("install", (event, arg) => {
-    service("install")
-      .then((data) => {
-        event.reply("install", data);
-      })
-      .catch((data) => {
-        console.log(`Error: ${formatError(data)}`);
-        event.reply("install", data);
-        throw new Error(`Error: ${formatError(data)}`);
+      ipcMain.on("install", (event, arg) => {
+        service("install")
+          .then((data) => {
+            event.reply("install", data);
+          })
+          .catch((data) => {
+            console.log(`Error: ${formatError(data)}`);
+            event.reply("install", data);
+            throw new Error(`Error: ${formatError(data)}`);
+          });
       });
-  });
 
-  ipcMain.on("uninstall", (event, arg) => {
-    service("uninstall")
-      .then((data) => {
-        event.reply("uninstall", data);
-      })
-      .catch((data) => {
-        console.log(`Error: ${formatError(data)}`);
-        event.reply("install", data);
-        throw new Error(`Error: ${formatError(data)}`);
+      ipcMain.on("uninstall", (event, arg) => {
+        service("uninstall")
+          .then((data) => {
+            event.reply("uninstall", data);
+          })
+          .catch((data) => {
+            console.log(`Error: ${formatError(data)}`);
+            event.reply("install", data);
+            throw new Error(`Error: ${formatError(data)}`);
+          });
       });
-  });
 
-  ipcMain.on("start", (event, arg) => {
-    service("start")
-      .then((data) => {
-        event.reply("start", data);
-      })
-      .catch((data) => {
-        console.log(`Error: ${formatError(data)}`);
-        event.reply("install", data);
-        throw new Error(`Error: ${formatError(data)}`);
+      ipcMain.on("start", (event, arg) => {
+        service("start")
+          .then((data) => {
+            event.reply("start", data);
+          })
+          .catch((data) => {
+            console.log(`Error: ${formatError(data)}`);
+            event.reply("install", data);
+            throw new Error(`Error: ${formatError(data)}`);
+          });
       });
-  });
 
-  ipcMain.on("stop", (event, arg) => {
-    service("stop")
-      .then((data) => {
-        event.reply("stop", data);
-      })
-      .catch((data) => {
-        console.log(`Error: ${formatError(data)}`);
-        event.reply("install", data);
-        throw new Error(`Error: ${formatError(data)}`);
+      ipcMain.on("stop", (event, arg) => {
+        service("stop")
+          .then((data) => {
+            event.reply("stop", data);
+          })
+          .catch((data) => {
+            console.log(`Error: ${formatError(data)}`);
+            event.reply("install", data);
+            throw new Error(`Error: ${formatError(data)}`);
+          });
       });
-  });
 
-  ipcMain.on("status", (event, arg) => {
-    service("status")
-      .then((data) => {
-        event.reply("status", { ...data, isWin: process.platform === "win32" }); // Lets frontend know if user login modal is needed
-      })
-      .catch((data) => {
-        console.log(`Error: ${formatError(data)}`);
-        event.reply("install", data);
-        throw new Error(`Error: ${formatError(data)}`);
+      ipcMain.on("status", (event, arg) => {
+        service("status")
+          .then((data) => {
+            event.reply("status", {
+              ...data,
+              isWin: process.platform === "win32",
+            }); // Lets frontend know if user login modal is needed
+          })
+          .catch((data) => {
+            console.log(`Error: ${formatError(data)}`);
+            event.reply("install", data);
+            throw new Error(`Error: ${formatError(data)}`);
+          });
       });
-  });
 
-  ipcMain.on("username", (event, arg) => {
-    // only used for Windows
-    getWinUserInfo()
-      .then((data) => {
-        event.reply("username", data.username);
-      })
-      .catch((data) => {
-        const errString = "Error getting windows user info:" + data.error;
-        event.reply("username", errString);
-        console.log(errString);
-        throw new Error(errString);
+      ipcMain.on("username", (event, arg) => {
+        // only used for Windows
+        getWinUserInfo()
+          .then((data) => {
+            event.reply("username", data.username);
+          })
+          .catch((data) => {
+            const errString = "Error getting windows user info:" + data.error;
+            event.reply("username", errString);
+            console.log(errString);
+            throw new Error(errString);
+          });
       });
-  });
 
-  ipcMain.on("makeConfigFile", (event, arg) => {
-    if (process.platform === "win32") {
-      getWinUserInfo()
-        .then((data) => {
-          makeWinConfigFile(data.domain, data.username, arg.password)
+      ipcMain.on("makeConfigFile", (event, arg) => {
+        if (process.platform === "win32") {
+          getWinUserInfo()
             .then((data) => {
-              event.reply("makeConfigFile", data);
+              makeWinConfigFile(data.domain, data.username, arg.password)
+                .then((data) => {
+                  event.reply("makeConfigFile", data);
+                })
+                .catch((data) => {
+                  const errString = "Error making config file:" + data.error;
+                  event.reply("makeConfigFile", {
+                    success: false,
+                    error: errString,
+                  });
+                  console.log(errString);
+                  throw new Error(errString);
+                });
             })
             .catch((data) => {
-              const errString = "Error making config file:" + data.error;
+              const errString = "Error getting Windows user info:" + data;
               event.reply("makeConfigFile", {
                 success: false,
                 error: errString,
@@ -238,127 +253,124 @@ if (handleSquirrelEvent()) {
               console.log(errString);
               throw new Error(errString);
             });
-        })
-        .catch((data) => {
-          const errString = "Error getting Windows user info:" + data;
-          event.reply("makeConfigFile", { success: false, error: errString });
-          console.log(errString);
-          throw new Error(errString);
-        });
-    } else {
-      makeMacConfigFile()
-        .then((data) => {
-          console.log("Made config file!");
-          event.reply("makeConfigFile", data);
-        })
-        .catch((data) => {
-          const errString = "Error making config file:" + data.error;
-          event.reply("makeConfigFile", data);
-          console.log(errString);
-        });
-    }
-  });
-
-  ipcMain.on("startServiceHandlerUpdate", (event, arg) => {
-    serviceHandlerUpdateInt = setInterval(() => {
-      event.reply("serviceHandlerState", getState());
-    }, 200);
-    init(0, 0)
-      .then((data) => {
-        if (data.success) clearInterval(serviceHandlerUpdateInt);
-        event.reply("serviceHandlerState", getState());
-      })
-      .catch((err) => {
-        if (err.stdout.includes("Cannot start service")) {
-          console.log("Failed to login on service start");
-          service("uninstall")
+        } else {
+          makeMacConfigFile()
             .then((data) => {
-              event.reply("windowsLoginFailed", err);
-              event.reply("serviceHandlerState", getState());
+              console.log("Made config file!");
+              event.reply("makeConfigFile", data);
             })
-            .catch((err) => {
-              const strErr = `Fatal error in uninstalling service after error:\nstdout: ${err.stdout}\nstderr: ${err.stderr} \nerror: ${err.error}`;
-              event.reply("windowsLoginFailed", err);
-              event.reply("serviceHandlerState", getState());
-              console.log(strErr);
-              throw new Error(strErr);
+            .catch((data) => {
+              const errString = "Error making config file:" + data.error;
+              event.reply("makeConfigFile", data);
+              console.log(errString);
             });
-          return;
         }
-        const strErr = `Fatal error in service handling:\nstdout: ${err.stdout}\nstderr: ${err.stderr} \nerror: ${err.error}`;
-        event.reply("serviceHandlerState", getState());
-        console.log(strErr);
-        throw new Error(strErr);
       });
-  });
 
-  ipcMain.on("stopServiceHandlerState", (event, arg) => {
-    if (serviceHandlerUpdateInt) {
-      clearInterval(serviceHandlerUpdateInt);
-    }
-  });
-
-  ipcMain.on("getLogs", (event, arg) => {
-    getLogs(arg)
-      .then((data) => {
-        event.reply("getLogs", { success: true, data: data });
-      })
-      .catch((err) => {
-        event.reply("getLogs", { success: false, error: err });
+      ipcMain.on("startServiceHandlerUpdate", (event, arg) => {
+        serviceHandlerUpdateInt = setInterval(() => {
+          event.reply("serviceHandlerState", getState());
+        }, 200);
+        init(0, 0)
+          .then((data) => {
+            if (data.success) clearInterval(serviceHandlerUpdateInt);
+            event.reply("serviceHandlerState", getState());
+          })
+          .catch((err) => {
+            if (err.stdout.includes("Cannot start service")) {
+              console.log("Failed to login on service start");
+              service("uninstall")
+                .then((data) => {
+                  event.reply("windowsLoginFailed", err);
+                  event.reply("serviceHandlerState", getState());
+                })
+                .catch((err) => {
+                  const strErr = `Fatal error in uninstalling service after error:\nstdout: ${err.stdout}\nstderr: ${err.stderr} \nerror: ${err.error}`;
+                  event.reply("windowsLoginFailed", err);
+                  event.reply("serviceHandlerState", getState());
+                  console.log(strErr);
+                  throw new Error(strErr);
+                });
+              return;
+            }
+            const strErr = `Fatal error in service handling:\nstdout: ${err.stdout}\nstderr: ${err.stderr} \nerror: ${err.error}`;
+            event.reply("serviceHandlerState", getState());
+            console.log(strErr);
+            throw new Error(strErr);
+          });
       });
-  });
 
-  // Handle creating/removing shortcuts on Windows when installing/uninstalling.
+      ipcMain.on("stopServiceHandlerState", (event, arg) => {
+        if (serviceHandlerUpdateInt) {
+          clearInterval(serviceHandlerUpdateInt);
+        }
+      });
 
-  const createWindow = () => {
-    // Create the browser window.
-    const mainWindow = new BrowserWindow({
-      width: 600,
-      height: 600,
-      minWidth: 600,
-      maxWidth: 800,
-      minHeight: 600,
-      maxHeight: 800,
-      titleBarStyle: "hidden",
+      ipcMain.on("getLogs", (event, arg) => {
+        getLogs(arg)
+          .then((data) => {
+            event.reply("getLogs", { success: true, data: data });
+          })
+          .catch((err) => {
+            event.reply("getLogs", { success: false, error: err });
+          });
+      });
 
-      webPreferences: {
-        nodeIntegration: true,
-        enableRemoteModule: true,
-        contextIsolation: false,
-        allowRunningInsecureContent: true,
-      },
-    });
-    mainWindow.setMenuBarVisibility(false);
+      if (app.isPackaged) compileLog.info("Creating window");
+      const createWindow = () => {
+        // Create the browser window.
+        const mainWindow = new BrowserWindow({
+          width: 600,
+          height: 600,
+          minWidth: 600,
+          maxWidth: 800,
+          minHeight: 600,
+          maxHeight: 800,
+          titleBarStyle: "hidden",
 
-    mainWindow.webContents.openDevTools();
-    // and load the index.html of the app.
-    mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
-  };
+          webPreferences: {
+            nodeIntegration: true,
+            enableRemoteModule: true,
+            contextIsolation: false,
+            allowRunningInsecureContent: true,
+          },
+        });
+        mainWindow.setMenuBarVisibility(false);
 
-  // This method will be called when Electron has finished
-  // initialization and is ready to create browser windows.
-  // Some APIs can only be used after this event occurs.
-  app.on("ready", () => {
-    createWindow();
-  });
+        mainWindow.webContents.openDevTools();
+        // and load the index.html of the app.
+        mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
+      };
 
-  // Quit when all windows are closed, except on macOS. There, it's common
-  // for applications and their menu bar to stay active until the user quits
-  // explicitly with Cmd + Q.
-  app.on("window-all-closed", () => {
-    if (process.platform !== "darwin") {
+      // This method will be called when Electron has finished
+      // initialization and is ready to create browser windows.
+      // Some APIs can only be used after this event occurs.
+      app.on("ready", () => {
+        if (app.isPackaged) compileLog.info("app is ready");
+        createWindow();
+      });
+
+      // Quit when all windows are closed, except on macOS. There, it's common
+      // for applications and their menu bar to stay active until the user quits
+      // explicitly with Cmd + Q.
+      app.on("window-all-closed", () => {
+        if (process.platform !== "darwin") {
+          app.quit();
+        }
+      });
+
+      app.on("activate", () => {
+        // On OS X it's common to re-create a window in the app when the
+        // dock icon is clicked and there are no other windows open.
+        if (BrowserWindow.getAllWindows().length === 0) {
+          createWindow();
+        }
+      });
+    })
+    .catch((err) => {
       app.quit();
-    }
-  });
-
-  app.on("activate", () => {
-    // On OS X it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
-    }
-  });
-
-  // In this file you can include the rest of your app's specific main process
-  // code. You can also put them in separate files and import them here.
+      compileLog.error("App not started");
+      compileLog.error(err.toString());
+      throw new Error(err.message);
+    });
 }
