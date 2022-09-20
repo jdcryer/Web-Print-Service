@@ -125,6 +125,64 @@ function handleSquirrelEvent() {
   return true;
 }
 
+// Setup update feed and events
+function updateEventsMac() {
+  //const feedURL = `http://localhost:3002/updates/latest?v=${app.getVersion()}`;
+  const feedURL = `http://localhost:3002/out/test.json`;
+
+  compileLog.info(feedURL);
+  autoUpdater.setFeedURL({ url: feedURL, serverType: "json" });
+  compileLog.info(autoUpdater.getFeedURL());
+
+  setInterval(() => {
+    compileLog.info("Started updated check");
+    autoUpdater.checkForUpdates();
+    compileLog.info("Ended updated check");
+  }, 10000);
+
+  autoUpdater.on("checking-for-update", () =>
+    compileLog.info("Checking for updates")
+  );
+
+  autoUpdater.on("update-available", () => compileLog.info("Update available"));
+
+  autoUpdater.on("update-not-available", () =>
+    compileLog.info("Update not available")
+  );
+
+  autoUpdater.on("update-downloaded", (event, releaseNotes, releaseName) => {
+    console.log("Update:)");
+    compileLog.info("Update window");
+
+    const dialogOpts = {
+      type: "info",
+      buttons: ["Restart", "Later"],
+      title: "Application Update",
+      message: process.platform === "win32" ? releaseNotes : releaseName,
+      detail:
+        "A new version has been downloaded. Restart the application to apply the updates.",
+    };
+
+    dialog
+      .showMessageBox(dialogOpts)
+      .then((returnValue) => {
+        if (returnValue.response === 0) autoUpdater.quitAndInstall();
+      })
+      .catch((err) => {
+        compileLog.error(err.message);
+      });
+  });
+
+  autoUpdater.on("error", (message) => {
+    compileLog.error("Uh oh");
+    compileLog.error(message);
+  });
+}
+
+console.log(
+  "\n---------------------------PROGRAM LOG START---------------------------"
+);
+
 if (handleSquirrelEvent()) {
   if (app.isPackaged) {
     compileLog.info("Exiting app");
@@ -250,23 +308,22 @@ if (handleSquirrelEvent()) {
                 success: false,
                 error: errString,
               });
-              console.log(errString);
+              compileLog.info(errString);
               throw new Error(errString);
             });
         } else {
           makeMacConfigFile()
             .then((data) => {
-              console.log("Made config file!");
+              compileLog.info("Made config file!");
               event.reply("makeConfigFile", data);
             })
             .catch((data) => {
               const errString = "Error making config file:" + data.error;
               event.reply("makeConfigFile", data);
-              console.log(errString);
+              compileLog.info(errString);
             });
         }
       });
-
       ipcMain.on("startServiceHandlerUpdate", (event, arg) => {
         serviceHandlerUpdateInt = setInterval(() => {
           event.reply("serviceHandlerState", getState());
@@ -278,24 +335,23 @@ if (handleSquirrelEvent()) {
           })
           .catch((err) => {
             if (err.stdout.includes("Cannot start service")) {
-              console.log("Failed to login on service start");
+              compileLog.info("Failed to login on service start");
               service("uninstall")
                 .then((data) => {
-                  event.reply("windowsLoginFailed", err);
-                  event.reply("serviceHandlerState", getState());
+                  console.log("Made config file!");
+                  event.reply("makeConfigFile", data);
                 })
                 .catch((err) => {
                   const strErr = `Fatal error in uninstalling service after error:\nstdout: ${err.stdout}\nstderr: ${err.stderr} \nerror: ${err.error}`;
                   event.reply("windowsLoginFailed", err);
                   event.reply("serviceHandlerState", getState());
-                  console.log(strErr);
+                  compileLog.info(strErr);
                   throw new Error(strErr);
                 });
-              return;
             }
             const strErr = `Fatal error in service handling:\nstdout: ${err.stdout}\nstderr: ${err.stderr} \nerror: ${err.error}`;
             event.reply("serviceHandlerState", getState());
-            console.log(strErr);
+            compileLog.info(strErr);
             throw new Error(strErr);
           });
       });

@@ -1,111 +1,74 @@
+"use strict";
 const fs = require("fs");
 const express = require("express");
-const nodePath = require("path");
-const nodeUrl = require("url");
-require("dotenv").config();
-
+const path = require("path");
 const app = express();
 
 app.use(require("morgan")("dev"));
 
-app.get("/latest/releases", (req, res) => {
-  const clientOs = req.query.os;
+app.use("/out", express.static(path.join(__dirname, "out"))); // Serves releases folder
 
-  if (!clientOs) {
-    res.json({
-      url: "",
-      error:
-        "Operating system is a required parameter, add ?os=*your OS* to the request",
-    });
-    return;
-  }
+app.get("/updates/releases/:os/:v/:file", (req, res) => {
+  const p = path.join(
+    __dirname,
+    "releases",
+    req.params.os,
+    req.params.v,
+    req.params.file
+  );
+  // Note: should use a stream here, instead of fs.readFile
+  fs.readFile(p, function (err, data) {
+    if (err) {
+      res.send("Oops! Couldn't find that file.");
+    } else {
+      // set the content type based on the file
+      res.contentType(req.params.file);
+      console.log(res.contentType(req.params.file));
+      res.send(data);
+    }
+    res.end();
+  });
+});
 
-  const latest = getLatestRelease(clientOs);
+app.get("/updates/latest", (req, res) => {
+  console.log(req.query);
+  const latest = getLatestRelease();
   const clientVersion = req.query.v;
 
-  if (false && clientVersion === latest) {
+  if (clientVersion === latest) {
     res.status(204).end();
   } else {
-    const installUrl = new nodeUrl.URL(getBaseUrl());
-    installUrl.pathname = nodePath.join(
-      "releases",
-      clientOs,
-      latest,
-      `${process.env.APP_NAME}.zip`
-    );
-
-    res.json({
-      url: installUrl,
-      name: "My Release Name",
-      notes: "Theses are some release notes innit",
-      pub_date: "2013-09-18T12:29:53+01:00",
+    res.status(200).json({
+      url: `${getBaseUrl()}/updates/releases/darwin/${latest}/Web Print Service.zip`,
+      name: `Web Print Service`,
+      notes: `Release notes`,
+      pub_date: `2022-09-15T17:47:48+0000`,
+      version: "1.1.1",
     });
+    console.log(
+      `${getBaseUrl()}/updates/releases/darwin/${latest}/Web Print Service.zip`
+    );
   }
 });
 
-let getLatestRelease = (os) => {
-  const dir = `${__dirname}/releases/${os}`;
-
+let getLatestRelease = () => {
+  const dir = `${__dirname}/releases/darwin`;
   const versionsDesc = fs
     .readdirSync(dir)
     .filter((file) => {
-      const filePath = nodePath.join(dir, file);
+      const filePath = path.join(dir, file);
       return fs.statSync(filePath).isDirectory();
     })
     .reverse();
+  console.log(versionsDesc);
 
   return versionsDesc[0];
 };
 
-app.use("/releases", (req, res) => {
-  const clientOs = req.query.os;
-  const clientVersion = req.query.v;
-
-  if (!clientOs) {
-    res.json({
-      url: "",
-      error: "Operating system and version number are required parameters",
-    });
-    return;
-  }
-  const pathToFile = nodePath.resolve(
-    __dirname,
-    "releases",
-    clientOs,
-    clientVersion,
-    `${process.env.APP_NAME}.zip`
-  );
-  console.log(pathToFile);
-  if (!fs.existsSync(pathToFile)) {
-    res.json({
-      url: "",
-      error: "This version does not exist",
-    });
-    return;
-  }
-
-  const installUrl = new nodeUrl.URL(getBaseUrl());
-  installUrl.pathname = nodePath.join(
-    "releases",
-    clientOs,
-    clientVersion,
-    `${process.env.APP_NAME}.zip`
-  );
-
-  res.json({
-    url: installUrl,
-    name: "My Release Name",
-    notes: "Theses are some release notes innit",
-    pub_date: "2013-09-18T12:29:53+01:00",
-  });
-});
-
 let getBaseUrl = () => {
-  if (process.env.NODE_ENV === "development") {
-    return "http://localhost:5500/";
-  } else {
-    return process.env.BASE_URL;
-  }
+  return "http://localhost:3002";
 };
 
-module.exports = app;
+app.listen(3002, () => {
+  console.log(`Express server listening on port 3002`);
+});

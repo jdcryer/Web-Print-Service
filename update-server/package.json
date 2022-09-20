@@ -2,10 +2,10 @@
   "name": "update-server",
   "version": "1.0.0",
   "description": "Server to retrieve updates from",
-  "main": "server.js",
+  "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "cross-env NODE_ENV=development nodemon server.js"
+    "start": "cross-env NODE_ENV=development nodemon app.js"
   },
   "author": "Sam Guard and Joseph Cryer",
   "license": "ISC",

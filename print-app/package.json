@@ -18,7 +18,19 @@
   "license": "MIT",
   "config": {
     "forge": {
-      "packagerConfig": {},
+      "packagerConfig": {
+        "osxSign": {
+          "identity": "Developer ID Application: J CRYER (JWBQHAJT62)",
+          "hardened-runtime": true,
+          "entitlements": "entitlements.plist",
+          "entitlements-inherit": "entitlements.plist",
+          "signature-flags": "library"
+        },
+        "osxNotarize": {
+          "appleId": "jdcryer@me.com",
+          "appleIdPassword": "<PLACEHOLDER>"
+        }
+      },
       "makers": [
         {
           "name": "@electron-forge/maker-squirrel",

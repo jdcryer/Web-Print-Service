@@ -26,6 +26,11 @@ const UNINSTALLER_CONFIG_NAME = `${UNINSTALLER_NAME}.plist`;
 const UNINSTALLER_SHELL_NAME = `uninstall.sh`;
 
 const SERVICE_CONFIG_DIR_PATH = path.join(__dirname, `static`);
+const APP_PATH = path.join(
+  __dirname,
+  `static`,
+  `web-print-service-macos-arm64`
+);
 
 const SERVICE_CONFIG_TEMPLATE_PATH = path.join(
   SERVICE_CONFIG_DIR_PATH,
@@ -262,7 +267,7 @@ function makeMacConfigFile() {
         }
         const configFile = data
           .replaceAll("**PATH**", SUPPORT_PATH)
-          .replaceAll("**APP_PATH**", SERVICE_CONFIG_PATH);
+          .replaceAll("**APP_PATH**", APP_PATH);
 
         fs.writeFile(
           UNINSTALLER_CONFIG_PATH,

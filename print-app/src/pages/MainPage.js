@@ -92,7 +92,7 @@ function MainPage() {
       <br />
 
       <Button variant="outlined" onClick={() => setNewPrinterOpen(true)}>
-        Add New Printer
+        Add a New Printer
       </Button>
 
       <Login open={loginOpen} setOpen={setLoginOpen} forced={loginForced} />

@@ -42,7 +42,12 @@ function ServicePanel({ open, setOpen }) {
           ipcRenderer.send("startServiceHandlerUpdate");
         }
       } else {
-        ipcRenderer.send("makeConfigFile");
+        if (arg.data === "not_installed") {
+          ipcRenderer.send("makeConfigFile");
+        } else {
+          ipcRenderer.send("startServiceHandlerUpdate");
+        }
+        console.log(arg);
       }
     });
 

@@ -1,8 +1,4 @@
 
-username=$(sed -n 1p user-profile.txt)
-password=$(sed -n 2p user-profile.txt)
-baseUrl=$(sed -n 3p user-profile.txt)
-ids=$(sed -n 1p printer-config.txt)
 
 serviceName=$(sed -n 1p file-paths.txt)
 uninstallServiceName=$(sed -n 2p file-paths.txt)
@@ -15,6 +11,11 @@ launchctl stop $serviceName
 launchctl remove $serviceName
 
 rm "$servicePath"
+
+username=$(sed -n 1p user-profile.txt)
+password=$(sed -n 2p user-profile.txt)
+baseUrl=$(sed -n 3p user-profile.txt)
+ids=$(sed -n 1p printer-config.txt)
 
 echo "https://$username:$password@$baseUrl/print/printer/$ids"
 curl -H "Cookie: test" -X DELETE "https://$username:$password@$baseUrl/print/printer/$ids"
