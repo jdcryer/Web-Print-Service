@@ -134,3 +134,4 @@ print-app/package-lock.json
 service/package-lock.json
 
 .DS_Store
+*.backup

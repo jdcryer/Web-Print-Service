@@ -1,5 +1,6 @@
 const printerHandler = require("@thiagoelg/node-printer");
 const fs = require("fs");
+const nodePath = require("path");
 const { print } = require("unix-print");
 const { exec } = require("child_process");
 const homeDir = require("os").homedir();
@@ -18,22 +19,46 @@ function execute(command) {
   });
 }
 
+const SERVICE_PATH =
+  process.platform === "darwin"
+    ? nodePath.join(
+        homeDir,
+        `/Library/Application Support/Web Print Service/service/`
+      )
+    : process.cwd();
+
 const PRINT_CONFIG_PATH =
   process.platform === "darwin"
-    ? `${homeDir}/Library/Application Support/Web Print Service/service/printer-config.json`
-    : process.cwd() + "/printer-config.json";
+    ? nodePath.join(SERVICE_PATH, `printer-config.json`)
+    : nodePath.join(SERVICE_PATH, `printer-config.json`);
 
 const UNINSTALLER_CONFIG_PATH =
   process.platform === "darwin"
-    ? `${homeDir}/Library/Application Support/Web Print Service/service/printer-config.txt`
+    ? nodePath.join(SERVICE_PATH, `printer-config.txt`)
     : false;
 
 const EDITABLE_ATTRIBUTES = ["displayName", "acceptedTypes", "enabled"];
-const PRINT_WRAPPER_PATH = `"${process.cwd()}\\static\\PDFtoPrinter.exe"`;
+const PRINT_WRAPPER_PATH = nodePath.join(
+  process.cwd(),
+  `\\static\\PDFtoPrinter.exe"`
+);
 
 function writeUninstallPrinterFile(ids) {
   if (!UNINSTALLER_CONFIG_PATH) return;
   fs.writeFileSync(UNINSTALLER_CONFIG_PATH, ids);
+}
+
+function checkFileIsValid(data) {
+  try {
+    data.map((x) => {
+      if (!x.name) {
+        return false;
+      }
+    });
+  } catch (err) {
+    return false;
+  }
+  return true;
 }
 
 class PrinterConnector {
@@ -41,7 +66,21 @@ class PrinterConnector {
     this.config = [];
     try {
       fs.statSync(PRINT_CONFIG_PATH);
-      this.config = JSON.parse(fs.readFileSync(PRINT_CONFIG_PATH, "utf-8"));
+      const tmpConfig = JSON.parse(fs.readFileSync(PRINT_CONFIG_PATH, "utf-8"));
+      if (checkFileIsValid(tmpConfig)) {
+        this.config = tmpConfig;
+      } else {
+        console.log("Printer config is invalid, backing up then deleting");
+        fs.copyFileSync(
+          PRINT_CONFIG_PATH,
+          nodePath.join(
+            SERVICE_PATH,
+            `bad-print-config-backup-${Date.now()}.backup`
+          )
+        );
+        fs.rmSync(PRINT_CONFIG_PATH);
+        throw new Error("Invalid file");
+      }
     } catch (err) {
       fs.writeFileSync(PRINT_CONFIG_PATH, JSON.stringify(this.config));
       writeUninstallPrinterFile(this.config.map((x) => x.id).join(","));
