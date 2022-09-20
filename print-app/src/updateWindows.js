@@ -1,28 +1,37 @@
 const compileLog = require("electron-log");
-const os = require("os");
 const fs = require("fs");
 const nodePath = require("path");
 const nodeUrl = require("url");
-const electronDialog = require("electron").dialog;
-const { autoUpdater } = require("electron");
 const execSync = require("child_process").execSync;
-const doServiceCommand = require("./serviceHandlerWin").service;
+const electron = require("electron");
 
-const TMP_FOLDER_NAME = `print-service-update`;
-const TMP_PATH = nodePath.join(os.tmpdir(), TMP_FOLDER_NAME);
+const TMP_FOLDER_NAME = `update-tmp-dir`;
 const STATIC_DIR_PATH = nodePath.join(
   __dirname.replaceAll(" ", "^ "),
   "static"
 );
 
+const USER_PROFILE_PATH = nodePath.join(STATIC_DIR_PATH, "user-profile.json");
+const PRINTER_CONFIG_PATH = nodePath.join(
+  STATIC_DIR_PATH,
+  "printer-config.json"
+);
+
 // Set to true if the dialog for updating is already open
 let globalDialogOpen = false;
+let appHasUpdated = false;
 
 // Setup update feed and events
-function updateEvents(releasesFolder) {
+/**
+ *
+ * @param {string} releasesFolder Path to folder to place update into
+ * @param {string} tmpConfigFiles Path to where to save configuration files
+ * @returns
+ */
+function updateEvents(releasesFolder, tmpConfigFiles) {
   return new Promise((finishedUpdateResolve, finishedUpdateReject) => {
     compileLog.info(releasesFolder);
-    autoUpdater.setFeedURL(releasesFolder);
+    electron.autoUpdater.setFeedURL(releasesFolder);
 
     //Remove all files in directory
     try {
@@ -63,10 +72,9 @@ function updateEvents(releasesFolder) {
 
     // Save files and stop service
     compileLog.info("Starting file save");
-    const saveFilesProm = saveServiceFiles().catch((err) => {
+    const saveFilesProm = saveServiceFiles(tmpConfigFiles).catch((err) => {
       compileLog.error(err.message);
     });
-    let fileExist = {};
 
     finishDownLoadProm
       .then(() => {
@@ -78,8 +86,7 @@ function updateEvents(releasesFolder) {
             saveFilesProm
               .then((res) => {
                 compileLog.info("Successfully saved files");
-                fileExist = res;
-                autoUpdater.checkForUpdates();
+                electron.autoUpdater.checkForUpdates();
               })
               .catch((err) => {
                 compileLog.error(err.message);
@@ -94,13 +101,14 @@ function updateEvents(releasesFolder) {
           );
         }
 
-        autoUpdater.on(
+        electron.autoUpdater.on(
           "update-downloaded",
           (event, releaseNotes, releaseName) => {
+            appHasUpdated = true;
             if (globalDialogOpen) return;
             globalDialogOpen = true;
             console.log("Update:)");
-            compileLog.info("Update window");
+            compileLog.info("Update dialog");
 
             const dialogOpts = {
               type: "info",
@@ -112,11 +120,11 @@ function updateEvents(releasesFolder) {
                 "A new version has been downloaded. Restart the application to apply the updates.",
             };
 
-            electronDialog
+            electron.dialog
               .showMessageBox(dialogOpts)
               .then((returnValue) => {
-                if (returnValue.response === 0) autoUpdater.quitAndInstall();
-                finishedUpdateResolve();
+                if (returnValue.response === 0)
+                  electron.autoUpdater.quitAndInstall();
               })
               .catch((err) => {
                 compileLog.error(err.message);
@@ -128,8 +136,8 @@ function updateEvents(releasesFolder) {
           }
         );
 
-        autoUpdater.on("update-not-available", finishedUpdateResolve);
-        autoUpdater.on("error", (error) => {
+        electron.autoUpdater.on("update-not-available", finishedUpdateResolve);
+        electron.autoUpdater.on("error", (error) => {
           compileLog.error(error.message);
           finishedUpdateReject();
         });
@@ -142,67 +150,62 @@ function updateEvents(releasesFolder) {
 
 // steps to take when update is triggered
 /**
+ * @param {string} tmpConfigFiles Path where to save the configuration files
  * @returns {Promise} Promise that resolves when the apps files have been copied
  */
-function saveServiceFiles() {
+function saveServiceFiles(tmpConfigFiles) {
   return new Promise((resolve, reject) => {
     compileLog.info("Save service files");
 
     // Create dir in temp director
 
     try {
-      // Remove any files from a previous update
-      fs.statSync(TMP_PATH);
-      execSync("rm *", { cwd: TMP_PATH, shell: "cmd" });
+      fs.statSync(tmpConfigFiles);
     } catch (err) {
       // Will error if folder does not exist
-      fs.mkdirSync(TMP_PATH);
+      fs.mkdirSync(tmpConfigFiles);
+    }
+
+    // Remove any files from a previous update
+    try {
+      execSync("rm *", { cwd: tmpConfigFiles, shell: "cmd" });
+    } catch (err) {
+      // Means there are no files in directory
     }
 
     // Copy user files into tmp dir
-
-    const userProfilePath = nodePath.join(STATIC_DIR_PATH, "user-profile.json");
-    const printerConfigPath = nodePath.join(
-      STATIC_DIR_PATH,
-      "printer-config.json"
-    );
-
-    // Check File exists and copy
-    filesExist = { userProfile: true, printerConfig: true };
     try {
-      fs.statSync(userProfilePath);
+      fs.statSync(USER_PROFILE_PATH);
       fs.copyFileSync(
-        userProfilePath,
-        nodePath.join(TMP_PATH, "user-profile.json")
+        USER_PROFILE_PATH,
+        nodePath.join(tmpConfigFiles, "user-profile.json")
       );
     } catch (err) {
       compileLog.error(err.message);
-      filesExist.userProfile = false;
     }
 
     try {
-      fs.statSync(printerConfigPath);
+      fs.statSync(PRINTER_CONFIG_PATH);
       fs.copyFileSync(
-        printerConfigPath,
-        nodePath.join(TMP_PATH, "printer-config.json")
+        PRINTER_CONFIG_PATH,
+        nodePath.join(tmpConfigFiles, "printer-config.json")
       );
     } catch (err) {
       compileLog.error(err.message);
-      filesExist.printerConfig = false;
     }
 
-    resolve(filesExist);
+    resolve();
   });
 }
 
 /**
- *
+ * @param {string} tmpConfigFiles Path to config files from previous version of the app
  * @returns {Promise} Promise that will resolve once the service files have been copied back into the app
  */
-function replaceServiceFiles() {
+function replaceServiceFiles(tmpConfigFiles) {
   return new Promise((resolve, reject) => {
     try {
-      fs.statSync(TMP_PATH);
+      fs.statSync(tmpConfigFiles);
       compileLog.info("Files found");
     } catch (err) {
       // If folder does not exist then return as there are no files to copy
@@ -211,9 +214,43 @@ function replaceServiceFiles() {
       return;
     }
 
-    execSync(`cp ${nodePath.join(TMP_PATH, "*")} ${STATIC_DIR_PATH}`);
+    // Remove any config files installed during the update
+    try {
+      fs.statSync(USER_PROFILE_PATH);
+      fs.rmSync(USER_PROFILE_PATH);
+    } catch (err) {
+      compileLog.error(err.message);
+    }
 
-    execSync("rm print-service-update -r", { shell: "cmd" });
+    try {
+      fs.statSync(PRINTER_CONFIG_PATH);
+      fs.rmSync(PRINTER_CONFIG_PATH);
+    } catch (err) {
+      compileLog.error(err.message);
+    }
+
+    try {
+      fs.copyFileSync(
+        nodePath.join(tmpConfigFiles, "user-profile.json"),
+        USER_PROFILE_PATH
+      );
+    } catch (err) {
+      compileLog.error(err.message);
+    }
+
+    try {
+      fs.copyFileSync(
+        nodePath.join(tmpConfigFiles, "printer-config.json"),
+        PRINTER_CONFIG_PATH
+      );
+    } catch (err) {
+      compileLog.error(err.message);
+    }
+
+    // Remove tmp files
+    fs.rmSync(tmpConfigFiles, { recursive: true });
+
+    resolve();
   });
 }
 
