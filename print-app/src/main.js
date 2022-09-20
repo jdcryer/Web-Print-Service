@@ -16,10 +16,7 @@ const isFirstRun = require("./isFirstRun");
 const { replaceServiceFiles, updateEvents } =
   process.platform === "win32"
     ? require("./updateWindows")
-    : {
-        replaceServiceFiles: () => {},
-        updateEvents: () => {},
-      };
+    : require("./updateMac");
 
 // Promise that is resolved unless the app is updating,
 //if updating will resolve after update
@@ -64,7 +61,7 @@ function handleSquirrelEvent() {
   const releasesFolder = path.join(mainFolder, "Releases");
   const tmpConfigFiles = path.join(mainFolder, "update-saved-files");
 
-  // If no arguements are provided then carry on to normal exec
+  // If no arguments are provided then carry on to normal exec
   if (process.argv.length === 1) {
     compileLog.info("no args");
     if (isFirstRun() && app.isPackaged) {
@@ -170,60 +167,6 @@ function handleSquirrelEvent() {
   }
   compileLog.info(squirrelEvent);
   return true;
-}
-
-// Setup update feed and events
-function updateEventsMac() {
-  //const feedURL = `http://localhost:3002/updates/latest?v=${app.getVersion()}`;
-  const feedURL = `http://localhost:3002/out/test.json`;
-
-  compileLog.info(feedURL);
-  autoUpdater.setFeedURL({ url: feedURL, serverType: "json" });
-  compileLog.info(autoUpdater.getFeedURL());
-
-  setInterval(() => {
-    compileLog.info("Started updated check");
-    autoUpdater.checkForUpdates();
-    compileLog.info("Ended updated check");
-  }, 10000);
-
-  autoUpdater.on("checking-for-update", () =>
-    compileLog.info("Checking for updates")
-  );
-
-  autoUpdater.on("update-available", () => compileLog.info("Update available"));
-
-  autoUpdater.on("update-not-available", () =>
-    compileLog.info("Update not available")
-  );
-
-  autoUpdater.on("update-downloaded", (event, releaseNotes, releaseName) => {
-    console.log("Update:)");
-    compileLog.info("Update window");
-
-    const dialogOpts = {
-      type: "info",
-      buttons: ["Restart", "Later"],
-      title: "Application Update",
-      message: process.platform === "win32" ? releaseNotes : releaseName,
-      detail:
-        "A new version has been downloaded. Restart the application to apply the updates.",
-    };
-
-    dialog
-      .showMessageBox(dialogOpts)
-      .then((returnValue) => {
-        if (returnValue.response === 0) autoUpdater.quitAndInstall();
-      })
-      .catch((err) => {
-        compileLog.error(err.message);
-      });
-  });
-
-  autoUpdater.on("error", (message) => {
-    compileLog.error("Uh oh");
-    compileLog.error(message);
-  });
 }
 
 console.log(

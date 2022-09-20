@@ -8,7 +8,8 @@ build: rm-build-files
 
 build-mac: rm-build-files
 	- cd service && npm run build
-	cp service/out/web-print-service-macos-arm64 print-app/static
+	codesign --force --options runtime --entitlements "service/entitlements.plist" --verify --verbose=4 --sign "Developer ID Application: J CRYER (JWBQHAJT62)" service/out/web-print-service-macos-arm64
+	mv service/out/web-print-service-macos-arm64 print-app/static
 	- cd print-app && npm run build
 
 build-win: rm-build-files

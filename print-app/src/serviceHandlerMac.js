@@ -2,6 +2,8 @@ const { exec, execSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const { app } = require("electron");
+const compileLog = require("electron-log");
+
 //System definitions
 
 //Paths
@@ -80,6 +82,8 @@ const UNINSTALLER_INSTALL_PATH = path.join(
   UNINSTALLER_CONFIG_NAME
 );
 
+const UPDATE_FLAG_PATH = path.join(SUPPORT_PATH, `update.txt`);
+
 const STATUS_RUNNING = "running";
 const STATUS_STOPPED = "stopped";
 const STATUS_NOT_INSTALLED = "not_installed";
@@ -96,10 +100,11 @@ const installServiceCommand = `cp ${esc(SERVICE_CONFIG_PATH)} ${esc(
   UNINSTALLER_INSTALL_PATH
 )} && cp ${esc(UNINSTALLER_SHELL_PATH)} ${esc(SUPPORT_PATH)}`;
 
-const uninstallServiceCommand = `launchctl remove ${esc(SERVICE_INSTALL_PATH)}`;
+const uninstallServiceCommand = `launchctl remove ${SERVICE_NAME}`;
 const startServiceCommand = `launchctl start ${SERVICE_NAME}`;
 const stopServiceCommand = `launchctl stop ${SERVICE_NAME}`;
 const getStatCommand = `launchctl list | grep ${SERVICE_NAME}`;
+const updateCommand = `touch ${esc(UPDATE_FLAG_PATH)}`;
 
 fs.writeFileSync(
   UNINSTALL_CONFIG_PATH,
@@ -160,13 +165,16 @@ function service(command) {
       postProcess = formatStatus;
       prom = execute(getStatCommand);
       break;
+    case "update":
+      prom = execute(updateCommand);
+      break;
     default:
       throw new Error("Unknown command");
   }
 
   return new Promise((resolve, reject) => {
     prom.then(({ error, stdout, stderr }) => {
-      if (error && error.code !== 1) {
+      if (error && error.code !== 1 && error.code !== 3) {
         reject({
           success: false,
           error: error,

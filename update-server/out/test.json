@@ -1,24 +1,34 @@
 {
-  "currentRelease": "1.1.1",
+  "currentRelease": "1.1.8",
   "releases": [
     {
-      "version": "1.1.0",
+      "version": "1.1.5",
       "updateTo": {
-        "version": "1.1.0",
+        "version": "1.1.5",
         "pub_date": "2022-09-15T17:45:48+0000",
         "notes": "Theses are some release notes innit",
         "name": "1.1.0",
-        "url": "http://localhost:3002/updates/releases/darwin/1.1.0/Web%20Print%20Service.zip"
+        "url": "http://localhost:3002/updates/releases/darwin/1.1.5/Web%20Print%20Service.zip"
       }
     },
     {
-      "version": "1.1.1",
+      "version": "1.1.3",
       "updateTo": {
-        "version": "1.1.1",
+        "version": "1.1.3",
         "pub_date": "2022-09-15T17:47:48+0000",
         "notes": "Theses are some more release notes innit",
-        "name": "1.1.1",
-        "url": "http://localhost:3002/updates/releases/darwin/1.1.1/Web%20Print%20Service.zip"
+        "name": "1.1.3",
+        "url": "http://localhost:3002/updates/releases/darwin/1.1.3/Web%20Print%20Service.zip"
+      }
+    },
+    {
+      "version": "1.1.8",
+      "updateTo": {
+        "version": "1.1.8",
+        "pub_date": "2022-09-15T17:47:48+0000",
+        "notes": "Theses are some more release notes innit",
+        "name": "1.1.7",
+        "url": "http://localhost:3002/updates/releases/darwin/1.1.7/Web%20Print%20Service.zip"
       }
     }
   ]

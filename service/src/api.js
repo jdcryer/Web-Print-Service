@@ -67,7 +67,6 @@ class Api {
       cookie = cookies[i].split("=");
       if (cookie[0].startsWith("4DSID")) {
         this.cookie = cookies[i];
-        console.log(cookies[i]);
         return;
       }
     }
@@ -77,28 +76,24 @@ class Api {
   get = async (url) => {
     let res = await axios.get(url, { headers: { Cookie: this.cookie } });
     this.setCookie(res.headers);
-    console.log(res.request._header);
     return res;
   };
 
   post = async (url, obj) => {
     let res = await axios.post(url, obj, { headers: { Cookie: this.cookie } });
     this.setCookie(res.headers);
-    console.log(res.request._header);
     return res;
   };
 
   put = async (url, obj) => {
     let res = await axios.put(url, obj, { headers: { Cookie: this.cookie } });
     this.setCookie(res.headers);
-    console.log(res.request._header);
     return res;
   };
 
   del = async (url) => {
     let res = await axios.delete(url, { headers: { Cookie: this.cookie } });
     this.setCookie(res.headers);
-    console.log(res.request._header);
     return res;
   };
 
@@ -225,6 +220,7 @@ class Api {
     return new PDFDocument({
       size: [width * 72, height * 72], // TODO: needs to be in points (1/72 inches)
       bufferPages: true,
+      autoFirstPage: false,
     });
   }
 
@@ -293,10 +289,10 @@ class Api {
               while (currentLabel < numLabels) {
                 if (svgList[currentSvg].qty === 0) currentSvg++;
 
+                doc.addPage();
+                doc.switchToPage(currentLabel % this.pdfSpoolSize);
                 SVGtoPDF(doc, svgList[currentSvg].svg, 0, 0);
                 svgList[currentSvg].qty--;
-                doc.addPage();
-                doc.switchToPage((currentLabel % this.pdfSpoolSize) + 1);
                 currentLabel++;
 
                 if (

@@ -1,4 +1,10 @@
 
+UPDATE=update.txt
+
+if test -f "$UPDATE"; then
+    rm "$UPDATE"
+    exit 0
+fi
 
 serviceName=$(sed -n 1p file-paths.txt)
 uninstallServiceName=$(sed -n 2p file-paths.txt)

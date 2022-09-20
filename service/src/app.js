@@ -59,11 +59,12 @@ let apiInstance = new api({
       }
     );
 
-    writeUninstallLoginFile(username, password, baseUrl);
+    writeUninstallLoginFile(file.username, file.password, file.baseUrl);
 
     apiInstance.startPrintJobListener();
     console.log("Found login data");
   } catch (err) {
+    console.log(err);
     console.log(`File Exists: ${fileExists}, Bad file: ${badFile}.`);
     console.log("Waiting for login to start...");
   }
@@ -235,7 +236,7 @@ app.post("/sendTestPrint", (req, res, next) => {
 });
 
 app.post("/ping", (req, res, next) => {
-  res.send(`Pong (Time: ${Date.now()})`);
+  res.send(`Pong (Time: ${Date.now()}) - Version: 1.1.10`);
 });
 
 module.exports = app;
