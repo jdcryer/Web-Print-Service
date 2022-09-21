@@ -135,8 +135,6 @@ function handleSquirrelEvent() {
       // Install desktop and start menu shortcuts
       spawnUpdate(["--createShortcut", exeName]);
 
-      replaceServiceFiles();
-
       app.quit();
       return true;
 
@@ -153,17 +151,16 @@ function handleSquirrelEvent() {
       return true;
 
     case "--squirrel-obsolete":
-      // I dont think this is ever called ????
+      // I dont think this is ever called by squirrel????
 
       app.quit();
       return true;
     case "--squirrel-firstrun":
-      appReadyToStart = replaceServiceFiles();
       return false;
 
     case "--update":
       appReadyToStart = updateEvents(releasesFolder, tmpConfigFiles);
-      return false;
+      return true;
   }
   compileLog.info(squirrelEvent);
   return true;

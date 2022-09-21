@@ -49,7 +49,6 @@ function updateEvents(releasesFolder, tmpConfigFiles) {
     const finishDownLoadProm = new Promise((resolve, reject) => {
       require("http")
         .get(serverPath, (response) => {
-          compileLog.info("http callback");
           response.pipe(zipFile);
 
           zipFile.on("finish", function () {
@@ -78,20 +77,19 @@ function updateEvents(releasesFolder, tmpConfigFiles) {
 
     finishDownLoadProm
       .then(() => {
-        compileLog.info("Finished downloading");
+        compileLog.info("Finished downloading update");
         try {
           fs.statSync(nodePath.join(releasesFolder, "RELEASES"));
           if (!globalDialogOpen) {
             compileLog.info("Started updated check");
             saveFilesProm
               .then((res) => {
-                compileLog.info("Successfully saved files");
+                compileLog.info("Successfully config saved files");
                 electron.autoUpdater.checkForUpdates();
               })
               .catch((err) => {
                 compileLog.error(err.message);
               });
-            compileLog.info("Ended updated check");
           } else {
             compileLog.info("Dialog already open");
           }
@@ -125,6 +123,8 @@ function updateEvents(releasesFolder, tmpConfigFiles) {
               .then((returnValue) => {
                 if (returnValue.response === 0)
                   electron.autoUpdater.quitAndInstall();
+
+                finishedUpdateResolve();
               })
               .catch((err) => {
                 compileLog.error(err.message);
@@ -206,11 +206,11 @@ function replaceServiceFiles(tmpConfigFiles) {
   return new Promise((resolve, reject) => {
     try {
       fs.statSync(tmpConfigFiles);
-      compileLog.info("Files found");
+      compileLog.info("Config files found");
     } catch (err) {
       // If folder does not exist then return as there are no files to copy
       compileLog.info("No files to load");
-      resolve("No files to copy");
+      resolve();
       return;
     }
 
