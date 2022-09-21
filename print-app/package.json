@@ -1,7 +1,7 @@
 {
   "name": "web-print-service",
   "productName": "Web Print Service",
-  "version": "1.1.10",
+  "version": "1.1.0",
   "description": "The basic Electron wrapper for the web print service",
   "main": ".webpack/main",
   "scripts": {
