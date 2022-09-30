@@ -86,6 +86,8 @@ function execute(command) {
  */
 function service(command) {
   let prom;
+  // Post process is a function that will take the stdout from the command and process it into a more useful form
+  // By defualt just returns stdout
   let postProcess = (out) => out;
   switch (command) {
     case "install":
@@ -122,12 +124,11 @@ function service(command) {
         ) &&
         command === "status"
       ) {
-        resolve({ success: true, data: STATUS_NOT_INSTALLED });
+        resolve({ data: STATUS_NOT_INSTALLED });
         return;
       }
       if (error) {
         reject({
-          success: false,
           error: error,
           stdout: stdout,
           stderr: stderr,
@@ -136,60 +137,66 @@ function service(command) {
         return;
       }
 
-      resolve({ success: true, data: postProcess(stdout) });
+      resolve({ data: postProcess(stdout) });
     });
   });
 }
 
-function init(failedAttempts, attempts) {
-  if (failedAttempts > 3 || attempts > 3) {
-    throw new Error("Too many failed attempts");
-  }
-  return new Promise((resolve, reject) => {
-    state = "Initialising";
-    //Check current status
-    service("status")
-      .then((res) => {
-        //If somehow this fails give up on installing/starting as theres something majorly wrong
-        if (res.success == false) {
-          reject(
-            `Cannot access services, error: ${res.error}\nstdout: ${res.stdout}\nstderr: ${res.stderr}`
-          );
-          return;
-        } else {
-          //Check to see if installed
-          if (res.data === STATUS_NOT_INSTALLED) {
-            //Install service
-            state = "Installing";
-            service("install")
-              .then((data) => {
-                state = "Installed";
-                init(failedAttempts, attempts + 1)
-                  .then(resolve)
-                  .catch(reject);
-              })
-              .catch(reject);
-            return;
-          } else if (res.data === STATUS_STOPPED) {
-            state = "Starting";
-            service("start")
-              .then((data) => {
-                state = "Running";
-                resolve({ success: true });
-              })
-              .catch((err) => {
-                reject(err);
-              });
-          } else if (res.data === STATUS_RUNNING) {
-            state = "Running";
-            resolve({ success: true });
-          } else {
-            resolve({ success: false, error: `Do not recognise ${res.data}` });
-          }
+async function init() {
+  let attempts = 0;
+  state = "Initialising";
+
+  // Abritrary number, normaly should only take 2 commands to start: install and start
+  // But more is added as the user could click "no" when admin is requested by the wrapper
+  while (attempts < 6) {
+    let commandRes;
+    try {
+      commandRes = await service("status");
+    } catch (err) {
+      // Service wrapper cannot be accessed so exit
+      throw new Error(
+        `Cannot access services 
+      error: ${err.error}
+      stdout: ${err.stdout}
+      stderr: ${err.stderr}`
+      );
+    }
+    console.log(commandRes.data);
+    switch (commandRes.data) {
+      case STATUS_NOT_INSTALLED:
+        state = "Installing";
+        try {
+          commandRes = await service("install");
+          state = "Installed";
+        } catch (err) {
+          console.error(`Cannot install service
+    error: ${err.error}
+    stdout: ${err.stdout}
+    stderr: ${err.stderr}`);
         }
-      })
-      .catch(reject);
-  });
+        break;
+      case STATUS_STOPPED:
+        state = "Starting";
+        try {
+          commandRes = await service("start");
+          state = "Started";
+        } catch (err) {
+          console.error(`Cannot start service
+    error: ${err.error}
+    stdout: ${err.stdout}
+    stderr: ${err.stderr}`);
+        }
+        break;
+      case STATUS_RUNNING:
+        state = "Running";
+        return;
+      default:
+        throw new Error(`Unknown status`);
+    }
+    attempts++;
+  }
+
+  throw new Error(`Cannot install and start service`);
 }
 
 function makeWinConfigFile(domain, username, password) {

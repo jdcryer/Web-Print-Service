@@ -161,6 +161,9 @@ function handleSquirrelEvent() {
     case "--update":
       appReadyToStart = updateEvents(releasesFolder, tmpConfigFiles);
       return true;
+    case ".":
+      // This arg is passed in when run in dev
+      return false;
   }
   compileLog.info(squirrelEvent);
   return true;
@@ -171,9 +174,7 @@ console.log(
 );
 
 if (handleSquirrelEvent()) {
-  if (app.isPackaged) {
-    compileLog.info("Exiting app");
-  }
+  compileLog.info("Exiting app");
 } else {
   appReadyToStart
     .then(() => {
@@ -190,7 +191,7 @@ if (handleSquirrelEvent()) {
           ? require("./serviceHandlerWin")
           : require("./serviceHandlerMac");
 
-      if (app.isPackaged) compileLog.info("Starting normal processes");
+      compileLog.info("Starting normal processes");
 
       serviceHandlerUpdateInt = undefined;
 
@@ -397,7 +398,7 @@ if (handleSquirrelEvent()) {
   // Some APIs can only be used after this event occurs.
   app.on("ready", () => {
     appReadyToStart.then(() => {
-      if (app.isPackaged) compileLog.info("app is ready");
+      compileLog.info("app is ready");
       createWindow();
     });
   });
@@ -406,14 +407,14 @@ if (handleSquirrelEvent()) {
   // for applications and their menu bar to stay active until the user quits
   // explicitly with Cmd + Q.
   app.on("window-all-closed", () => {
-    if (app.isPackaged) compileLog.info("app.window-all-closed");
+    compileLog.info("app.window-all-closed");
     if (process.platform !== "darwin") {
       app.quit();
     }
   });
 
   app.on("activate", () => {
-    if (app.isPackaged) compileLog.info("app.activate");
+    compileLog.info("app.activate");
     // On OS X it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) {
