@@ -40,7 +40,8 @@ const UNINSTALLER_CONFIG_PATH =
 const EDITABLE_ATTRIBUTES = ["displayName", "acceptedTypes", "enabled"];
 const PRINT_WRAPPER_PATH = nodePath.join(
   process.cwd(),
-  `\\static\\PDFtoPrinter.exe"`
+  `static`,
+  `PDFtoPrinter.exe`
 );
 
 function writeUninstallPrinterFile(ids) {
