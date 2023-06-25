@@ -58,40 +58,39 @@
         }
       ],
       "plugins": [
-        [
-          "@electron-forge/plugin-webpack",
-          {
+        {
+          "name": "@electron-forge/plugin-webpack",
+          "config": {
             "mainConfig": "./webpack.main.config.js",
             "renderer": {
               "config": "./webpack.renderer.config.js",
               "entryPoints": [
                 {
+                  "name": "main_window",
                   "html": "./src/index.html",
-                  "js": "./src/renderer.js",
-                  "name": "main_window"
+                  "js": "./src/renderer.js"
                 }
               ]
-            },
-            "devContentSecurityPolicy": "default-src * 'unsafe-eval' 'unsafe-inline'"
+            }
           }
-        ]
+        }
       ]
     }
   },
   "devDependencies": {
-    "@babel/core": "^7.15.0",
-    "@babel/preset-react": "^7.14.5",
-    "@electron-forge/cli": "6.0.0-beta.59",
-    "@electron-forge/maker-deb": "6.0.0-beta.59",
-    "@electron-forge/maker-rpm": "6.0.0-beta.59",
-    "@electron-forge/maker-squirrel": "6.0.0-beta.59",
-    "@electron-forge/maker-zip": "6.0.0-beta.59",
-    "@electron-forge/plugin-webpack": "6.0.0-beta.59",
+    "@babel/core": "^7.22.5",
+    "@babel/preset-react": "^7.22.5",
+    "@electron-forge/cli": "^6.2.1",
+    "@electron-forge/maker-deb": "^6.2.1",
+    "@electron-forge/maker-rpm": "^6.2.1",
+    "@electron-forge/maker-squirrel": "^6.2.1",
+    "@electron-forge/maker-zip": "^6.2.1",
+    "@electron-forge/plugin-webpack": "^6.2.1",
     "@vercel/webpack-asset-relocator-loader": "1.6.0",
     "babel-loader": "^8.2.2",
     "copy-webpack-plugin": "^9.1.0",
     "css-loader": "^6.0.0",
-    "electron": "^13.2.1",
+    "electron": "^25.2.0",
     "electron-log": "^4.4.8",
     "node-loader": "^2.0.0",
     "style-loader": "^3.0.0",

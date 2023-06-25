@@ -1,7 +1,7 @@
 const jimp = require("jimp");
 const axios = require("axios");
 const JsBarcode = require("jsbarcode");
-const { DOMImplementation, XMLSerializer } = require("xmldom");
+const { DOMImplementation, XMLSerializer } = require("@xmldom/xmldom");
 const xmlSerializer = new XMLSerializer();
 
 const PIXEL_PER_MM = 140 / 50;
