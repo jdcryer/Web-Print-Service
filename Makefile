@@ -39,11 +39,11 @@ get-files-win:
 clean-node-modules: clean-node-modules-service clean-node-modules-app
 
 clean-node-modules-service:
-	- yes | rm service/node_modules/* -r
+	- yes | rm -r service/node_modules/*
 	- yes | rm service/package-lock.json
 
 clean-node-modules-app:
-	- yes | rm print-app/node_modules/* -r
+	- yes | rm -r print-app/node_modules/*
 	- yes | rm print-app/package-lock.json
 	
 

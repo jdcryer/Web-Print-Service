@@ -16,67 +16,6 @@
     "name": "Joseph Cryer, Sam Guard"
   },
   "license": "MIT",
-  "config": {
-    "forge": {
-      "packagerConfig": {
-        "osxSign": {
-          "identity": "Developer ID Application: J CRYER (JWBQHAJT62)",
-          "hardened-runtime": true,
-          "entitlements": "entitlements.plist",
-          "entitlements-inherit": "entitlements.plist",
-          "signature-flags": "library",
-          "ignore": "web-print-service-macos-arm64"
-        },
-        "osxNotarize": {
-          "appleId": "jdcryer@me.com",
-          "appleIdPassword": "<PLACEHOLDER>"
-        }
-      },
-      "makers": [
-        {
-          "name": "@electron-forge/maker-squirrel",
-          "config": {
-            "name": "web_print_service"
-          }
-        },
-        {
-          "name": "@electron-forge/maker-zip"
-        },
-        {
-          "name": "@electron-forge/maker-deb",
-          "config": {}
-        },
-        {
-          "name": "@electron-forge/maker-rpm",
-          "config": {}
-        },
-        {
-          "name": "@electron-forge/maker-dmg",
-          "platforms": [
-            "darwin"
-          ]
-        }
-      ],
-      "plugins": [
-        {
-          "name": "@electron-forge/plugin-webpack",
-          "config": {
-            "mainConfig": "./webpack.main.config.js",
-            "renderer": {
-              "config": "./webpack.renderer.config.js",
-              "entryPoints": [
-                {
-                  "name": "main_window",
-                  "html": "./src/index.html",
-                  "js": "./src/renderer.js"
-                }
-              ]
-            }
-          }
-        }
-      ]
-    }
-  },
   "devDependencies": {
     "@babel/core": "^7.22.5",
     "@babel/preset-react": "^7.22.5",
@@ -94,7 +33,8 @@
     "electron-log": "^4.4.8",
     "node-loader": "^2.0.0",
     "style-loader": "^3.0.0",
-    "webpack-permissions-plugin": "^1.0.8"
+    "webpack-permissions-plugin": "^1.0.8",
+    "node-gyp": "9.0.0"
   },
   "dependencies": {
     "@electron-forge/maker-dmg": "^6.0.0-beta.64",
@@ -102,6 +42,7 @@
     "@material-ui/icons": "^4.11.2",
     "axios": "^0.27.2",
     "clsx": "^1.1.1",
+    "dotenv": "^16.3.1",
     "electron-forge": "^5.2.4",
     "electron-squirrel-startup": "^1.0.0",
     "react": "^17.0.2",
