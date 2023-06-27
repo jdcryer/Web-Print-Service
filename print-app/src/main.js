@@ -1,3 +1,4 @@
+"use strict";
 const {
   app,
   BrowserWindow,
@@ -18,9 +19,16 @@ const { replaceServiceFiles, updateEvents } =
     ? require("./updateWindows")
     : require("./updateMac");
 
-// Promise that is resolved unless the app is updating,
-//if updating will resolve after update
-let appReadyToStart = Promise.resolve();
+// Get paths to execs and folders
+const APP_FOLDER = path.resolve(process.execPath, "..");
+const MAIN_FOLDER = path.resolve(APP_FOLDER, "..");
+const UPDATE_DOT_EXE = path.join(MAIN_FOLDER, "Update.exe");
+const EXE_NAME = path.basename(process.execPath);
+const RELEASE_FOLDER = path.join(MAIN_FOLDER, "Releases");
+const TMP_CONFIG_FILES = path.join(MAIN_FOLDER, "update-saved-files");
+
+// List of promises that need to resolve before app start
+let appReadyToStart = [];
 
 function formatError(data) {
   return `${data.error}\nstdout:${data.stdout}\nstderr: ${data.stderr}\n`;
@@ -52,44 +60,45 @@ function getWinUserInfo() {
   });
 }
 
-function handleSquirrelEvent() {
-  // Get paths to execs and folders
-  const appFolder = path.resolve(process.execPath, "..");
-  const mainFolder = path.resolve(appFolder, "..");
-  const updateDotExe = path.join(mainFolder, "Update.exe");
-  const exeName = path.basename(process.execPath);
-  const releasesFolder = path.join(mainFolder, "Releases");
-  const tmpConfigFiles = path.join(mainFolder, "update-saved-files");
-
-  // If no arguments are provided then carry on to normal exec
-  if (process.argv.length === 1) {
-    compileLog.info("no args");
-    if (isFirstRun() && app.isPackaged) {
-      compileLog.info("First run");
-      // Only executing if this is the first run with no
-      // Arguements passed into the app
-      if (process.platform === "win32") {
-        appReadyToStart = new Promise((resolve, reject) => {
-          require("./serviceHandlerWin")
-            .service("uninstall")
+// Remove the stop then uninstall the service followed by copy the services config files to a temp directory
+function removeServiceWin() {
+  appReadyToStart.push(
+    new Promise((resolve, reject) => {
+      require("./serviceHandlerWin")
+        .service("uninstall")
+        .then(() => {
+          replaceServiceFiles(TMP_CONFIG_FILES)
             .then(() => {
-              replaceServiceFiles(tmpConfigFiles)
-                .then(() => {
-                  resolve();
-                })
-                .catch((err) => {
-                  compileLog.error(`Could not replace service files: ${err}`);
-                  reject(err);
-                });
+              resolve();
             })
             .catch((err) => {
-              compileLog.error(`Could not uninstall service: ${err}`);
+              compileLog.error(`Could not replace service files: ${err}`);
+              reject(err);
             });
+        })
+        .catch((err) => {
+          compileLog.error(`Could not uninstall service: ${err}`);
+          resolve();
         });
-      } else {
-        // Mac first run handling
-      }
+    })
+  );
+}
+
+function firstRun() {
+  if (isFirstRun() && app.isPackaged) {
+    compileLog.info("First run");
+    if (process.platform === "win32") {
+      removeServiceWin();
+    } else {
+      // Mac first run handling
     }
+  }
+}
+
+function handleSquirrelEvent() {
+  // If no arguments are provided then carry on to normal exec
+  if (process.argv.length === 1) {
+    firstRun(); // Will do first run tasks if needed
     return false;
   }
 
@@ -107,23 +116,24 @@ function handleSquirrelEvent() {
   };
 
   const spawnUpdate = function (args) {
-    return spawn(updateDotExe, args);
+    return spawn(UPDATE_DOT_EXE, args);
   };
 
   const squirrelEvent = process.argv[1];
   compileLog.info(`Arg: ${squirrelEvent}`);
   switch (squirrelEvent) {
     case "--squirrel-install":
+      firstRun();
       if (process.platform === "win32") {
         try {
-          fs.statSync(releasesFolder);
+          fs.statSync(RELEASE_FOLDER);
         } catch (err) {
-          fs.mkdirSync(releasesFolder);
+          fs.mkdirSync(RELEASE_FOLDER);
         }
         try {
-          fs.statSync(tmpConfigFiles);
+          fs.statSync(TMP_CONFIG_FILES);
         } catch (err) {
-          fs.mkdirSync(tmpConfigFiles);
+          fs.mkdirSync(TMP_CONFIG_FILES);
         }
       }
     case "--squirrel-updated":
@@ -133,7 +143,7 @@ function handleSquirrelEvent() {
       //   explorer context menus
 
       // Install desktop and start menu shortcuts
-      spawnUpdate(["--createShortcut", exeName]);
+      spawnUpdate(["--createShortcut", EXE_NAME]);
 
       app.quit();
       return true;
@@ -145,7 +155,7 @@ function handleSquirrelEvent() {
       // --squirrel-updated handlers
       finalUninstall();
       // Remove desktop and start menu shortcuts
-      spawnUpdate(["--removeShortcut", exeName]);
+      spawnUpdate(["--removeShortcut", EXE_NAME]);
 
       app.quit();
       return true;
@@ -156,10 +166,11 @@ function handleSquirrelEvent() {
       app.quit();
       return true;
     case "--squirrel-firstrun":
+      firstRun();
       return false;
 
     case "--update":
-      appReadyToStart = updateEvents(releasesFolder, tmpConfigFiles);
+      appReadyToStart.push(updateEvents(RELEASE_FOLDER, TMP_CONFIG_FILES));
       return true;
     case ".":
       // This arg is passed in when run in dev
@@ -176,7 +187,8 @@ console.log(
 if (handleSquirrelEvent()) {
   compileLog.info("Exiting app");
 } else {
-  appReadyToStart
+  compileLog.info(appReadyToStart[0]);
+  Promise.all(appReadyToStart)
     .then(() => {
       // Include service functions (dependent on os)
       const {
@@ -193,7 +205,7 @@ if (handleSquirrelEvent()) {
 
       compileLog.info("Starting normal processes");
 
-      serviceHandlerUpdateInt = undefined;
+      let serviceHandlerUpdateInt = undefined;
 
       ipcMain.on("install", (event, arg) => {
         service("install")
@@ -397,7 +409,7 @@ if (handleSquirrelEvent()) {
   // initialization and is ready to create browser windows.
   // Some APIs can only be used after this event occurs.
   app.on("ready", () => {
-    appReadyToStart.then(() => {
+    Promise.all(appReadyToStart).then(() => {
       compileLog.info("app is ready");
       createWindow();
     });

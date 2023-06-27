@@ -1,6 +1,7 @@
 const compileLog = require("electron-log");
 const fs = require("fs");
 const nodePath = require("path");
+const http = require("http");
 const nodeUrl = require("url");
 const execSync = require("child_process").execSync;
 const electron = require("electron");
@@ -40,14 +41,14 @@ function updateEvents(releasesFolder, tmpConfigFiles) {
 
     // Download file from server
     const serverPath = new nodeUrl.URL(
-      `http://localhost:5500/latest/WebPrintService.zip`
+      `http://localhost:3002/updates/win32/${electron.app.getVersion()}/latest`
     );
 
     const zipName = nodePath.join(releasesFolder, "WebPrintService.zip");
     const zipFile = fs.createWriteStream(zipName);
 
     const finishDownLoadProm = new Promise((resolve, reject) => {
-      require("http")
+      http
         .get(serverPath, (response) => {
           response.pipe(zipFile);
 
